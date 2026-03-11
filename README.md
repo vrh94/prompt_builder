@@ -55,6 +55,4 @@ ClaudePromptBuilder/
 └── README.md
 ```
 
-## License
 
-MIT

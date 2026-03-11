@@ -1,12 +1,12 @@
 import sys
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QTextEdit, QComboBox, QPushButton, QGroupBox,
     QFormLayout, QSplitter, QMessageBox, QCheckBox,
-    QScrollArea, QFrame, QFileDialog, QTabWidget
+    QScrollArea, QFrame, QFileDialog, QTabWidget, QGraphicsDropShadowEffect
 )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve
+from PyQt6.QtGui import QFont, QColor
 
 
 # ── Shared constants ──
@@ -76,7 +76,6 @@ CREATIVITY_MAP = {
 
 
 # ── Per-model prompt formatters ──
-# Each receives a dict with shared + model-specific field values.
 
 def _format_claude(d):
     """Claude: XML tags (recommended by Anthropic) or Markdown fallback."""
@@ -106,7 +105,6 @@ def _format_claude(d):
         parts.append(sec("constraints", d["constraints"], "Constraints"))
     parts.append(sec("output_requirements", d["output_reqs"],
                       "Output Requirements"))
-    # Extended thinking
     if d.get("extended_thinking"):
         parts.append(sec(
             "thinking_instructions",
@@ -129,7 +127,6 @@ def _format_chatgpt(d):
     """ChatGPT: System message + User message structure."""
     use_split = d.get("system_user_split", True)
 
-    # -- System-level content: identity, behaviour, tone --
     sys_parts = [f"You are {d['role']}."]
     if d["guidance"]:
         sys_parts.append(d["guidance"])
@@ -140,7 +137,6 @@ def _format_chatgpt(d):
         sys_parts.append(d["creativity_hint"])
     system_msg = " ".join(sys_parts)
 
-    # -- User-level content --
     user_parts = []
     if d["context"]:
         user_parts.append(f"## Context\n{d['context']}")
@@ -168,7 +164,6 @@ def _format_chatgpt(d):
     if use_split:
         return (f"# System Message\n{system_msg}\n\n"
                 f"# User Message\n{user_msg}")
-    # Flat format — merge everything
     return f"{system_msg}\n\n{user_msg}"
 
 
@@ -268,8 +263,6 @@ def _format_copilot(d):
 
 
 # ── Model configurations ──
-# "specific_options" defines model-specific UI fields built dynamically.
-# Types: "combo" (dropdown), "check" (checkbox)
 
 MODEL_CONFIGS = [
     {
@@ -358,6 +351,22 @@ MODEL_CONFIGS = [
 ]
 
 
+# ── Helpers ──
+
+def _glow(widget, color="#00FF41", radius=18, opacity=0.35):
+    """Apply a subtle glow (drop-shadow) effect to a widget."""
+    fx = QGraphicsDropShadowEffect(widget)
+    fx.setBlurRadius(radius)
+    fx.setOffset(0, 0)
+    fx.setColor(QColor(color))
+    fx.setEnabled(True)
+    # QGraphicsDropShadowEffect doesn't have setOpacity; control via color alpha
+    c = QColor(color)
+    c.setAlphaF(opacity)
+    fx.setColor(c)
+    widget.setGraphicsEffect(fx)
+
+
 # ── Shared input fields panel (always visible, left side) ──
 
 class SharedFieldsPanel(QWidget):
@@ -369,12 +378,13 @@ class SharedFieldsPanel(QWidget):
 
     @staticmethod
     def _required_label(text):
-        return QLabel(f'{text} <span style="color:red;">*</span>')
+        lbl = QLabel(f'{text} <span style="color:#FF4444;">*</span>')
+        return lbl
 
     def _build(self):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
 
         inner = QWidget()
         form_layout = QVBoxLayout(inner)
@@ -383,7 +393,8 @@ class SharedFieldsPanel(QWidget):
         # --- Task Configuration ---
         task_group = QGroupBox("Task Configuration")
         task_form = QFormLayout()
-        task_form.setLabelAlignment(Qt.AlignRight)
+        task_form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight)
 
         self.task_type = QComboBox()
         self.task_type.addItems(TASK_TYPES)
@@ -400,7 +411,8 @@ class SharedFieldsPanel(QWidget):
         # --- Role & Tone ---
         role_group = QGroupBox("Role & Tone")
         role_form = QFormLayout()
-        role_form.setLabelAlignment(Qt.AlignRight)
+        role_form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight)
 
         self.role_input = QLineEdit()
         self.role_input.setPlaceholderText(
@@ -431,7 +443,8 @@ class SharedFieldsPanel(QWidget):
         # --- Prompt Content ---
         content_group = QGroupBox("Prompt Content")
         content_form = QFormLayout()
-        content_form.setLabelAlignment(Qt.AlignRight)
+        content_form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight)
 
         self.context_input = QTextEdit()
         self.context_input.setPlaceholderText(
@@ -473,7 +486,8 @@ class SharedFieldsPanel(QWidget):
         # --- Output Settings ---
         output_group = QGroupBox("Output Settings")
         output_form = QFormLayout()
-        output_form.setLabelAlignment(Qt.AlignRight)
+        output_form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight)
 
         self.output_format = QComboBox()
         self.output_format.addItems([
@@ -513,7 +527,8 @@ class SharedFieldsPanel(QWidget):
         # --- Advanced Options ---
         adv_group = QGroupBox("Advanced Options")
         adv_form = QFormLayout()
-        adv_form.setLabelAlignment(Qt.AlignRight)
+        adv_form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight)
 
         self.chain_of_thought = QCheckBox("Enable step-by-step reasoning")
         adv_form.addRow("Chain of Thought:", self.chain_of_thought)
@@ -539,7 +554,6 @@ class SharedFieldsPanel(QWidget):
         form_layout.addStretch()
         scroll.setWidget(inner)
 
-        # Wrap scroll in this widget's layout
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll)
@@ -609,26 +623,25 @@ class SharedFieldsPanel(QWidget):
 # ── Model-specific tab (right side, one per model) ──
 
 class ModelTab(QWidget):
-    """Model-specific options + output + buttons.  Reads shared fields
-    from the SharedFieldsPanel passed at construction time."""
+    """Model-specific options + output + buttons."""
 
     def __init__(self, config, shared_panel, parent=None):
         super().__init__(parent)
         self.config = config
         self.shared = shared_panel
-        # Dynamically created model-specific widgets, keyed by option "key"
         self.option_widgets = {}
         self._build()
 
     def _build(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(8)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(10)
 
         # ── Model-specific options ──
         opts_group = QGroupBox(f"{self.config['name']} Options")
         opts_form = QFormLayout()
-        opts_form.setLabelAlignment(Qt.AlignRight)
+        opts_form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight)
 
         for opt in self.config["specific_options"]:
             key = opt["key"]
@@ -648,70 +661,60 @@ class ModelTab(QWidget):
         layout.addWidget(opts_group)
 
         # ── Generated output ──
-        out_label = QLabel(f"Generated Prompt \u2014 {self.config['name']}")
-        out_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        out_label = QLabel(f"\u25b8 output://{self.config['name'].lower()}")
+        out_label.setFont(QFont("Consolas", 11, QFont.Weight.Bold))
+        out_label.setObjectName("outputLabel")
         layout.addWidget(out_label)
 
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
         self.output_text.setFont(QFont("Consolas", 10))
-        self.output_text.setStyleSheet(
-            "QTextEdit { background: #1E1E2E; color: #CDD6F4; "
-            "border: 1px solid #45475A; border-radius: 6px; padding: 8px; }"
-        )
+        self.output_text.setObjectName("outputArea")
         layout.addWidget(self.output_text, 1)
 
         # ── Buttons ──
         btn_row = QHBoxLayout()
-        accent = self.config["accent"]
-        accent_hover = self.config["accent_hover"]
+        btn_row.setSpacing(6)
 
-        generate_btn = QPushButton("Generate Prompt")
-        generate_btn.setFixedHeight(38)
-        generate_btn.setStyleSheet(
-            f"QPushButton {{ background: {accent}; color: white; "
-            f"font-weight: bold; border-radius: 6px; padding: 0 20px; }} "
-            f"QPushButton:hover {{ background: {accent_hover}; }}"
-        )
-        generate_btn.clicked.connect(self._generate_prompt)
+        generate_btn = self._make_btn(
+            "GENERATE", "#00FF41", self._generate_prompt)
+        _glow(generate_btn, "#00FF41", 20, 0.4)
         btn_row.addWidget(generate_btn)
 
-        copy_btn = QPushButton("Copy to Clipboard")
-        copy_btn.setFixedHeight(38)
-        copy_btn.setStyleSheet(
-            "QPushButton { background: #6D28D9; color: white; "
-            "font-weight: bold; border-radius: 6px; padding: 0 20px; } "
-            "QPushButton:hover { background: #5B21B6; }"
-        )
-        copy_btn.clicked.connect(self._copy_to_clipboard)
+        copy_btn = self._make_btn(
+            "COPY", "#00BFFF", self._copy_to_clipboard)
         btn_row.addWidget(copy_btn)
 
-        save_btn = QPushButton("Save to File")
-        save_btn.setFixedHeight(38)
-        save_btn.setStyleSheet(
-            "QPushButton { background: #059669; color: white; "
-            "font-weight: bold; border-radius: 6px; padding: 0 20px; } "
-            "QPushButton:hover { background: #047857; }"
-        )
-        save_btn.clicked.connect(self._save_to_file)
+        save_btn = self._make_btn(
+            "SAVE", "#FFD700", self._save_to_file)
         btn_row.addWidget(save_btn)
 
-        clear_btn = QPushButton("Clear All")
-        clear_btn.setFixedHeight(38)
-        clear_btn.setStyleSheet(
-            "QPushButton { background: #DC2626; color: white; "
-            "font-weight: bold; border-radius: 6px; padding: 0 20px; } "
-            "QPushButton:hover { background: #B91C1C; }"
-        )
-        clear_btn.clicked.connect(self._clear_all)
+        clear_btn = self._make_btn(
+            "CLEAR", "#FF4444", self._clear_all)
         btn_row.addWidget(clear_btn)
 
         layout.addLayout(btn_row)
 
+    @staticmethod
+    def _make_btn(label, color, slot):
+        btn = QPushButton(f"[ {label} ]")
+        btn.setFixedHeight(36)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setStyleSheet(
+            f"QPushButton {{ background: #0c0c0c; color: {color}; "
+            f"font-weight: bold; border: 1px solid {color}; "
+            f"border-radius: 2px; padding: 0 16px; "
+            f"font-family: Consolas; font-size: 9pt; }} "
+            f"QPushButton:hover {{ background: {color}; color: #0a0a0a; }} "
+            f"QPushButton:pressed {{ background: {color}; color: #0a0a0a; "
+            f"border: 2px solid {color}; }}"
+        )
+        btn.clicked.connect(slot)
+        return btn
+
     # ── Data collection ──
 
     def _collect_model_fields(self):
-        """Read model-specific widget values into a dict."""
         result = {}
         for key, widget in self.option_widgets.items():
             if isinstance(widget, QCheckBox):
@@ -734,7 +737,6 @@ class ModelTab(QWidget):
                                 "Please enter a Role / Persona.")
             return
 
-        # Merge shared + model-specific + CoT
         data = {**shared, **self._collect_model_fields()}
         data["cot"] = (self.config["cot_text"]
                        if self.shared.chain_of_thought.isChecked() else "")
@@ -774,8 +776,6 @@ class ModelTab(QWidget):
                                     f"Prompt saved to {path}")
 
     def _clear_all(self):
-        """Reset model-specific options, output, AND shared fields."""
-        # Reset model-specific widgets
         for opt in self.config["specific_options"]:
             widget = self.option_widgets.get(opt["key"])
             if widget is None:
@@ -785,7 +785,6 @@ class ModelTab(QWidget):
             elif isinstance(widget, QComboBox):
                 widget.setCurrentIndex(0)
         self.output_text.clear()
-        # Also clear shared panel
         self.shared.clear_all()
 
 
@@ -802,27 +801,36 @@ class PromptBuilderApp(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
-        main_layout.setContentsMargins(12, 12, 12, 12)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(16, 12, 16, 12)
+        main_layout.setSpacing(10)
 
-        # Title
-        title = QLabel("AI Prompt Builder")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #334155; padding: 6px;")
+        # Title with glow
+        title = QLabel("> AI_PROMPT_BUILDER")
+        title.setFont(QFont("Consolas", 20, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setObjectName("appTitle")
+        _glow(title, "#00FF41", 30, 0.5)
         main_layout.addWidget(title)
 
-        # Main splitter: shared fields (left) | model tabs (right)
-        splitter = QSplitter(Qt.Horizontal)
+        # Subtitle
+        subtitle = QLabel(
+            "// select model tab  \u2192  configure  "
+            "\u2192  generate optimized prompt")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle.setObjectName("appSubtitle")
+        main_layout.addWidget(subtitle)
+
+        # Main splitter
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter, 1)
 
-        # Left — shared fields (persists across tab switches)
         self.shared_panel = SharedFieldsPanel()
         splitter.addWidget(self.shared_panel)
 
-        # Right — tabbed model panels
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
+        self.tabs.setUsesScrollButtons(True)
+        self.tabs.setElideMode(Qt.TextElideMode.ElideNone)
         self.model_tabs = []
         for cfg in MODEL_CONFIGS:
             tab = ModelTab(cfg, self.shared_panel)
@@ -833,43 +841,241 @@ class PromptBuilderApp(QMainWindow):
         splitter.setStretchFactor(0, 4)
         splitter.setStretchFactor(1, 6)
 
+        # ── Premium hacker stylesheet ──
         self.setStyleSheet("""
-            QMainWindow { background: #F8FAFC; }
+            /* ── Base ── */
+            * {
+                font-family: "Consolas", "Fira Code", "Courier New", monospace;
+            }
+            QMainWindow, QWidget {
+                background: #08080a;
+                color: #b0b8c0;
+            }
+
+            /* ── Title area ── */
+            #appTitle {
+                color: #00FF41;
+                background: transparent;
+                padding: 4px;
+                letter-spacing: 2px;
+            }
+            #appSubtitle {
+                color: #3a5a3a;
+                font-size: 9pt;
+                background: transparent;
+                padding-bottom: 6px;
+            }
+
+            /* ── Group boxes ── */
             QGroupBox {
-                font-weight: bold; font-size: 11pt;
-                border: 1px solid #CBD5E1; border-radius: 8px;
-                margin-top: 14px; padding-top: 18px;
+                font-weight: bold; font-size: 10pt;
+                color: #00cc55;
+                border: 1px solid #1a2e1a;
+                border-radius: 3px;
+                margin-top: 14px; padding-top: 20px;
+                background: #0a0c0a;
             }
             QGroupBox::title {
-                subcontrol-origin: margin; left: 12px; padding: 0 6px;
+                subcontrol-origin: margin;
+                left: 14px; padding: 0 8px;
+                color: #00cc55;
+                background: #0a0c0a;
             }
-            QLabel { font-size: 10pt; }
+
+            /* ── Labels ── */
+            QLabel {
+                font-size: 10pt;
+                color: #8a9a8a;
+                background: transparent;
+            }
+
+            /* ── Input fields ── */
             QLineEdit, QTextEdit, QComboBox {
-                font-size: 10pt; padding: 4px;
-                border: 1px solid #CBD5E1; border-radius: 4px;
+                font-size: 10pt; padding: 5px 6px;
+                background: #0e100e;
+                color: #c0d0c0;
+                border: 1px solid #1a2e1a;
+                border-radius: 2px;
+                selection-background-color: #00FF41;
+                selection-color: #08080a;
             }
-            QComboBox { min-height: 26px; }
-            QCheckBox { font-size: 10pt; }
+            QLineEdit:focus, QTextEdit:focus, QComboBox:on {
+                border: 1px solid #00cc55;
+            }
+            QLineEdit::placeholder, QTextEdit::placeholder {
+                color: #2a3a2a;
+            }
+            QComboBox {
+                min-height: 28px;
+            }
+            QComboBox::drop-down {
+                border: none;
+                background: #121412;
+                width: 24px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #00cc55;
+                margin-right: 6px;
+            }
+            QComboBox QAbstractItemView {
+                background: #0e100e;
+                color: #c0d0c0;
+                border: 1px solid #00cc55;
+                selection-background-color: #00cc55;
+                selection-color: #08080a;
+                outline: none;
+                padding: 2px;
+            }
+
+            /* ── Checkboxes ── */
+            QCheckBox {
+                font-size: 10pt;
+                color: #8a9a8a;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 16px; height: 16px;
+                border: 1px solid #1a2e1a;
+                border-radius: 2px;
+                background: #0e100e;
+            }
+            QCheckBox::indicator:hover {
+                border: 1px solid #00cc55;
+            }
+            QCheckBox::indicator:checked {
+                background: #00cc55;
+                border: 1px solid #00cc55;
+            }
+
+            /* ── Tabs ── */
             QTabWidget::pane {
-                border: 1px solid #CBD5E1; border-radius: 6px;
-                background: #F8FAFC;
+                border: 1px solid #1a2e1a;
+                border-radius: 2px;
+                background: #08080a;
+                top: -1px;
             }
             QTabBar::tab {
                 font-size: 9pt; font-weight: bold;
-                padding: 6px 16px;
-                border: 1px solid #CBD5E1;
+                padding: 7px 18px;
+                color: #3a6a3a;
+                background: #0a0c0a;
+                border: 1px solid #1a2e1a;
                 border-bottom: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
+                border-top-left-radius: 3px;
+                border-top-right-radius: 3px;
                 margin-right: 2px;
-                background: #E2E8F0;
             }
             QTabBar::tab:selected {
-                background: #F8FAFC;
-                border-bottom: 2px solid #F8FAFC;
+                background: #08080a;
+                color: #00FF41;
+                border-bottom: 2px solid #00FF41;
             }
-            QTabBar::tab:hover {
-                background: #F1F5F9;
+            QTabBar::tab:!selected:hover {
+                background: #0e120e;
+                color: #00cc55;
+            }
+
+            /* ── Output area ── */
+            #outputLabel {
+                color: #00cc55;
+                background: transparent;
+                font-size: 11pt;
+                padding: 2px 0;
+            }
+            #outputArea {
+                background: #050605;
+                color: #00FF41;
+                border: 1px solid #0f1f0f;
+                border-radius: 2px;
+                padding: 10px;
+            }
+            #outputArea:focus {
+                border: 1px solid #00cc55;
+            }
+
+            /* ── Scrollbars ── */
+            QScrollArea {
+                background: transparent;
+                border: none;
+            }
+            QScrollBar:vertical {
+                background: #0a0c0a;
+                width: 8px;
+                border: none;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical {
+                background: #1a2e1a;
+                min-height: 40px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #00cc55;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                height: 0px;
+                background: transparent;
+            }
+            QScrollBar:horizontal {
+                background: #0a0c0a;
+                height: 8px;
+                border: none;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:horizontal {
+                background: #1a2e1a;
+                min-width: 40px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:horizontal:hover {
+                background: #00cc55;
+            }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                width: 0px;
+                background: transparent;
+            }
+
+            /* ── Splitter ── */
+            QSplitter::handle {
+                background: #1a2e1a;
+                width: 1px;
+            }
+            QSplitter::handle:hover {
+                background: #00cc55;
+            }
+
+            /* ── Message boxes ── */
+            QMessageBox {
+                background: #0a0c0a;
+            }
+            QMessageBox QLabel {
+                color: #c0d0c0;
+                font-size: 10pt;
+            }
+            QMessageBox QPushButton {
+                background: #0e100e;
+                color: #00cc55;
+                border: 1px solid #1a2e1a;
+                border-radius: 2px;
+                padding: 6px 24px;
+                font-weight: bold;
+                min-width: 70px;
+            }
+            QMessageBox QPushButton:hover {
+                background: #00cc55;
+                color: #08080a;
+                border: 1px solid #00cc55;
+            }
+
+            /* ── File dialog ── */
+            QFileDialog {
+                background: #0a0c0a;
+                color: #c0d0c0;
             }
         """)
 
@@ -879,7 +1085,7 @@ def main():
     app.setStyle("Fusion")
     window = PromptBuilderApp()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

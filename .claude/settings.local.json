@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//cygdrive/c/Users/avrhovnik/Documents/**)",
-      "Bash(python -c \"import ast; ast.parse\\(open\\(''prompt_builder.py''\\).read\\(\\)\\); print\\(''Syntax OK''\\)\")",
-      "Bash(python -c \"import ast; ast.parse\\(open\\(''c:/Users/avrhovnik/Documents/ClaudePromptBuilder/prompt_builder.py''\\).read\\(\\)\\); print\\(''Syntax OK''\\)\")"
-    ]
-  }
-}
