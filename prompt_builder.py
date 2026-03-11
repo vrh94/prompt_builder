@@ -8,6 +8,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QFont, QColor
 
+from engine import PromptTemplate, build_from_gui
+
 
 # ── Shared constants ──
 
@@ -72,6 +74,336 @@ CREATIVITY_MAP = {
     "Balanced": "Balance accuracy with moderate creativity.",
     "Creative (high creativity)":
         "Be creative, exploratory, and imaginative in your response.",
+}
+
+FIELD_HELP = {
+    "task_type": {
+        "title": "Task Type",
+        "description": "Select the category that best describes what you want the AI to do. This automatically adds task-specific guidance to your prompt.",
+        "examples": [
+            "Code Generation \u2014 write new functions, classes, or scripts",
+            "Code Review / Debugging \u2014 find bugs and suggest fixes",
+            "Summarization \u2014 condense a long article into key points",
+            "Brainstorming \u2014 generate creative ideas on a topic",
+        ],
+    },
+    "programming_lang": {
+        "title": "Programming Language",
+        "description": "Choose the programming language for code-related tasks. The AI will use this language in its response. Pick \u2018(not applicable)\u2019 for non-code tasks.",
+        "examples": [
+            "Python \u2014 data science, scripting, web backends",
+            "TypeScript \u2014 modern web applications",
+            "Rust \u2014 systems programming with memory safety",
+            "SQL \u2014 database queries and data manipulation",
+        ],
+    },
+    "role": {
+        "title": "Role / Persona",
+        "description": "Define who the AI should act as. A specific persona helps the AI adopt the right expertise, vocabulary, and perspective.",
+        "examples": [
+            "Senior Python developer with 10 years of experience",
+            "Technical writer specializing in API documentation",
+            "Data scientist focused on machine learning",
+            "Patient tutor explaining concepts to beginners",
+        ],
+    },
+    "tone": {
+        "title": "Tone",
+        "description": "Set the communication style for the AI\u2019s response. This affects word choice, formality, and overall feel.",
+        "examples": [
+            "Professional \u2014 formal, polished, business-appropriate",
+            "Casual / Friendly \u2014 conversational, approachable",
+            "Technical \u2014 precise, domain-specific terminology",
+            "Concise / Direct \u2014 straight to the point, no fluff",
+        ],
+    },
+    "audience": {
+        "title": "Target Audience",
+        "description": "Specify who will read the AI\u2019s output. This adjusts complexity, jargon, and level of explanation.",
+        "examples": [
+            "Beginners \u2014 detailed explanations, minimal jargon",
+            "Senior engineers \u2014 concise, assumes deep knowledge",
+            "Non-technical stakeholders \u2014 business language, no code",
+            "Students \u2014 educational tone with learning examples",
+        ],
+    },
+    "context": {
+        "title": "Context",
+        "description": "Provide background information the AI needs. Include relevant project details, technology stack, or previous decisions.",
+        "examples": [
+            "I\u2019m building a REST API with FastAPI and PostgreSQL.",
+            "This is a legacy Java 8 codebase migrating to Java 17.",
+            "I\u2019m writing a blog post about renewable energy.",
+        ],
+    },
+    "instruction": {
+        "title": "Main Instruction",
+        "description": "The core task or question for the AI. Be specific and clear about exactly what you need. This is the most important field.",
+        "examples": [
+            "Write a Python function that groups a list of dicts by a key.",
+            "Review this code for security vulnerabilities and suggest fixes.",
+            "Explain TCP vs UDP with real-world analogies.",
+            "Summarize this 2000-word article in 5 bullet points.",
+        ],
+    },
+    "input_data": {
+        "title": "Input Data",
+        "description": "Paste any code, text, data, or content the AI should process or analyze. This is the material the AI will work with.",
+        "examples": [
+            "A code snippet to review or refactor",
+            "A JSON payload or dataset to analyze",
+            "An article or passage to summarize",
+            "Error logs or stack traces to debug",
+        ],
+    },
+    "constraints": {
+        "title": "Constraints",
+        "description": "Specify rules, limitations, or things the AI should avoid. These guardrails ensure the output meets your requirements.",
+        "examples": [
+            "Do not use external libraries \u2014 standard library only.",
+            "Keep the response under 300 words.",
+            "Avoid recursion \u2014 use iterative approaches only.",
+            "Do not include placeholder or TODO comments.",
+        ],
+    },
+    "examples": {
+        "title": "Examples (Few-Shot)",
+        "description": "Provide example input/output pairs to show the AI the pattern you expect. Few-shot prompting significantly improves quality.",
+        "examples": [
+            "Input: \u2018hello world\u2019 \u2192 Output: \u2018Hello World\u2019",
+            "Input: \u20182024-01-15\u2019 \u2192 Output: \u2018January 15, 2024\u2019",
+            "Q: What is 2+2? A: 4",
+            "Provide 2\u20133 examples for best results",
+        ],
+    },
+    "output_format": {
+        "title": "Output Format",
+        "description": "Choose how the AI should structure its response. A format instruction is appended to your prompt automatically.",
+        "examples": [
+            "Markdown \u2014 headers, bold, lists, code blocks",
+            "JSON \u2014 structured data in JSON format",
+            "Code Only \u2014 pure code without explanations",
+            "Table \u2014 organized data in rows and columns",
+        ],
+    },
+    "detail_level": {
+        "title": "Detail Level",
+        "description": "Control how thorough the AI\u2019s response should be. Higher detail means longer, more comprehensive answers.",
+        "examples": [
+            "Brief \u2014 short, one-paragraph answer",
+            "Moderate \u2014 covers main points with some explanation",
+            "Detailed \u2014 thorough coverage with examples",
+            "Comprehensive \u2014 exhaustive, covers edge cases",
+        ],
+    },
+    "output_language": {
+        "title": "Output Language",
+        "description": "Select the natural language for the AI\u2019s response. The AI will write its entire response in this language.",
+        "examples": [
+            "English \u2014 default for most technical content",
+            "Spanish / French / German \u2014 for localized content",
+            "Japanese \u2014 for Japanese documentation",
+            "Pick \u2018Other\u2019 and type any language not listed",
+        ],
+    },
+    "max_length": {
+        "title": "Max Length",
+        "description": "Set an approximate word limit. \u2018No limit\u2019 lets the AI decide the appropriate length.",
+        "examples": [
+            "~100 words \u2014 quick, tweet-length answers",
+            "~500 words \u2014 a solid paragraph or short explanation",
+            "~1000 words \u2014 detailed explanations or short articles",
+            "No limit \u2014 for comprehensive tasks",
+        ],
+    },
+    "chain_of_thought": {
+        "title": "Chain of Thought",
+        "description": "When enabled, the AI shows its reasoning step-by-step before giving the final answer. Improves accuracy for complex problems.",
+        "examples": [
+            "Math problems \u2014 shows each calculation step",
+            "Debugging \u2014 walks through logic to find issues",
+            "Decision-making \u2014 weighs pros and cons",
+            "Best for: complex reasoning, math, logic, multi-step tasks",
+        ],
+    },
+    "citations": {
+        "title": "Citations",
+        "description": "When enabled, the AI is asked to include references or sources to back up its claims. Useful for research tasks.",
+        "examples": [
+            "Research papers or documentation links",
+            "Official documentation references",
+            "Relevant Stack Overflow answers",
+            "Best for: research, technical writing, fact-based content",
+        ],
+    },
+    "creativity_hint": {
+        "title": "Creativity Hint",
+        "description": "Guide how creative vs. factual the AI should be. Maps roughly to the \u2018temperature\u2019 setting in AI models.",
+        "examples": [
+            "Precise \u2014 for factual answers, code, data analysis",
+            "Balanced \u2014 for general-purpose tasks",
+            "Creative \u2014 for brainstorming, storytelling, marketing",
+            "Default \u2014 lets the model use its standard setting",
+        ],
+    },
+    "extra_instructions": {
+        "title": "Extra Instructions",
+        "description": "Any additional instructions that don\u2019t fit other fields. Appended to the end of the generated prompt.",
+        "examples": [
+            "Also include unit tests for the code.",
+            "Use American English spelling.",
+            "Structure the response with H2 headers per section.",
+            "Include a TL;DR at the beginning.",
+        ],
+    },
+    "btn_generate": {
+        "title": "Generate",
+        "description": "Build the final prompt using all your settings. The prompt is formatted specifically for the selected AI model using its corresponding formatter.",
+        "examples": [
+            "Claude \u2192 uses XML tags for structure",
+            "ChatGPT \u2192 uses System + User message format",
+            "Gemini \u2192 uses bold Markdown headers",
+            "Copilot \u2192 uses concise, instruction-focused format",
+        ],
+    },
+    "btn_engine": {
+        "title": "Engine",
+        "description": "Generate the prompt via the Pydantic/Jinja2 engine layer. Uses validated templates with automatic format suffix injection and provider-specific formatting.",
+        "examples": [
+            "Validates all fields with Pydantic before building",
+            "Uses Jinja2 templates for rendering",
+            "Auto-injects format instructions (JSON, XML, etc.)",
+            "Supports Claude extended thinking mode",
+        ],
+    },
+    "btn_copy": {
+        "title": "Copy",
+        "description": "Copy the generated prompt to your clipboard so you can paste it directly into any AI chat interface.",
+        "examples": [
+            "Paste into Claude at claude.ai",
+            "Paste into ChatGPT at chat.openai.com",
+            "Paste into any AI tool or API client",
+            "Tip: generate the prompt first, then copy",
+        ],
+    },
+    "btn_save": {
+        "title": "Save",
+        "description": "Save the generated prompt to a file on your computer. Useful for reusing prompts later or building a prompt library.",
+        "examples": [
+            "Save as .txt for plain text",
+            "Save as .md for Markdown formatting",
+            "Build a library of reusable prompt templates",
+            "Share saved prompts with your team",
+        ],
+    },
+    "btn_clear": {
+        "title": "Clear",
+        "description": "Reset all input fields and model-specific options to defaults. Clears shared fields, model settings, and the output area.",
+        "examples": [
+            "Resets Role, Context, Instruction, etc.",
+            "Resets model-specific checkboxes and dropdowns",
+            "Clears the generated output area",
+            "Use to start a completely new prompt from scratch",
+        ],
+    },
+    "model": {
+        "title": "Model",
+        "description": "Select which specific AI model you are targeting. Different models have different capabilities, speed, and cost tradeoffs.",
+        "examples": [
+            "Claude Opus 4 \u2014 most capable, best for complex tasks",
+            "GPT-4.1 \u2014 strong reasoning and coding",
+            "Gemini 2.5 Pro \u2014 Google\u2019s advanced model",
+            "Smaller models (Haiku, mini) \u2014 faster and cheaper",
+        ],
+    },
+    "xml_tags": {
+        "title": "XML Tags",
+        "description": "Wrap prompt sections in XML tags (e.g., &lt;role&gt;, &lt;instruction&gt;). Anthropic recommends this for Claude for best results.",
+        "examples": [
+            "&lt;role&gt;You are a Python expert.&lt;/role&gt;",
+            "&lt;instruction&gt;Write a sorting function.&lt;/instruction&gt;",
+            "Recommended ON for Claude models",
+            "Turn OFF to use plain Markdown instead",
+        ],
+    },
+    "extended_thinking": {
+        "title": "Extended Thinking",
+        "description": "Instructs the AI to reason deeply using extended thinking. The AI works through its reasoning thoroughly before responding.",
+        "examples": [
+            "Complex mathematical proofs",
+            "Multi-step architectural decisions",
+            "Detailed code analysis with many considerations",
+            "Best for: problems requiring deep, careful reasoning",
+        ],
+    },
+    "system_user_split": {
+        "title": "System + User Messages",
+        "description": "Format the prompt as separate System and User messages, following OpenAI\u2019s recommended chat format.",
+        "examples": [
+            "System: \u2018You are a Python expert. Be concise.\u2019",
+            "User: \u2018Write a function to sort a list.\u2019",
+            "Recommended ON for ChatGPT/GPT models",
+            "Turn OFF to combine into a single message",
+        ],
+    },
+    "json_mode": {
+        "title": "Strict JSON Mode",
+        "description": "Forces the AI to respond with valid JSON only, with no additional text. Use for machine-parseable output.",
+        "examples": [
+            "API response formatting",
+            "Structured data extraction",
+            "Configuration file generation",
+            "Adds an explicit JSON-only instruction to the prompt",
+        ],
+    },
+    "grounding": {
+        "title": "Google Search Grounding",
+        "description": "Instructs Gemini to ground its response with current, verifiable information from Google Search and cite sources.",
+        "examples": [
+            "Current events or recent developments",
+            "Latest library versions or API changes",
+            "Up-to-date statistics or data",
+            "Fact-checking and verification",
+        ],
+    },
+    "safety": {
+        "title": "Safety Level",
+        "description": "Control how strict the safety guidelines are for Gemini\u2019s output. Affects content filtering and restrictions.",
+        "examples": [
+            "Default \u2014 standard safety settings",
+            "Strict \u2014 avoids speculative or unverified content",
+            "Permissive \u2014 thorough discussion of nuanced topics",
+        ],
+    },
+    "mode": {
+        "title": "Mode",
+        "description": "Set the operating mode for Copilot. This affects the tone, approach, and style of the generated prompt.",
+        "examples": [
+            "Balanced \u2014 general-purpose, well-rounded",
+            "Creative \u2014 innovative solutions, exploratory thinking",
+            "Precise \u2014 strictly factual, minimal speculation",
+        ],
+    },
+    "code_first": {
+        "title": "Code-First Output",
+        "description": "Instructs the AI to lead with the code solution first, then provide brief explanations only where needed.",
+        "examples": [
+            "Shows the complete code block first",
+            "Explanations come after the code, not before",
+            "Great for quick implementation tasks",
+            "Perfect for experienced developers",
+        ],
+    },
+    "web_search": {
+        "title": "Web Search References",
+        "description": "Instructs Copilot to reference current web information where relevant and cite sources in its response.",
+        "examples": [
+            "Up-to-date info about libraries and frameworks",
+            "Official documentation references",
+            "Links to relevant resources",
+            "Best for: research, latest practices",
+        ],
+    },
 }
 
 
@@ -353,18 +685,74 @@ MODEL_CONFIGS = [
 
 # ── Helpers ──
 
-def _glow(widget, color="#00FF41", radius=18, opacity=0.35):
-    """Apply a subtle glow (drop-shadow) effect to a widget."""
+def _soft_shadow(widget, color="#000000", radius=20, offset_y=4, opacity=0.10):
+    """Apply a soft shadow effect to a widget (Apple-style depth)."""
     fx = QGraphicsDropShadowEffect(widget)
     fx.setBlurRadius(radius)
-    fx.setOffset(0, 0)
-    fx.setColor(QColor(color))
-    fx.setEnabled(True)
-    # QGraphicsDropShadowEffect doesn't have setOpacity; control via color alpha
+    fx.setOffset(0, offset_y)
     c = QColor(color)
     c.setAlphaF(opacity)
     fx.setColor(c)
     widget.setGraphicsEffect(fx)
+
+
+def _show_help_dialog(source_widget, title, description, examples):
+    """Show an Apple-styled help information dialog."""
+    parent = source_widget.window()
+    msg = QMessageBox(parent)
+    msg.setWindowTitle(f"Help \u2014 {title}")
+    msg.setIcon(QMessageBox.Icon.NoIcon)
+    html = (f"<h3 style='margin-bottom:6px;'>{title}</h3>"
+            f"<p style='font-size:10pt;'>{description}</p>")
+    if examples:
+        html += "<p style='font-size:10pt;'><b>Examples:</b></p>"
+        html += "<ul style='font-size:10pt;'>"
+        for ex in examples:
+            html += f"<li>{ex}</li>"
+        html += "</ul>"
+    msg.setTextFormat(Qt.TextFormat.RichText)
+    msg.setText(html)
+    msg.exec()
+
+
+def _make_help_btn(help_key, parent=None):
+    """Create a small circular \u2018?\u2019 button linked to a help entry."""
+    btn = QPushButton("?")
+    btn.setFixedSize(22, 22)
+    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    btn.setObjectName("helpBtn")
+    btn.setToolTip("Click for help")
+    info = FIELD_HELP.get(help_key, {})
+    title = info.get("title", help_key.replace("_", " ").title())
+    desc = info.get("description", "No description available.")
+    examples = info.get("examples", [])
+    btn.clicked.connect(
+        lambda _=False, t=title, d=desc, e=examples: _show_help_dialog(
+            btn, t, d, e))
+    return btn
+
+
+def _with_help(widget, help_key):
+    """Create a layout containing a widget and a help (?) button."""
+    layout = QHBoxLayout()
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(4)
+    layout.addWidget(widget, 1)
+    layout.addWidget(_make_help_btn(help_key, widget), 0,
+                     Qt.AlignmentFlag.AlignTop)
+    return layout
+
+
+def _btn_with_help(btn, help_key):
+    """Group an action button with its help (?) button."""
+    container = QWidget()
+    container.setObjectName("helpWrapper")
+    lay = QHBoxLayout(container)
+    lay.setContentsMargins(0, 0, 0, 0)
+    lay.setSpacing(2)
+    lay.addWidget(btn)
+    lay.addWidget(_make_help_btn(help_key, container))
+    return container
 
 
 # ── Shared input fields panel (always visible, left side) ──
@@ -378,7 +766,7 @@ class SharedFieldsPanel(QWidget):
 
     @staticmethod
     def _required_label(text):
-        lbl = QLabel(f'{text} <span style="color:#FF4444;">*</span>')
+        lbl = QLabel(f'{text} <span style="color:#FF3B30;">*</span>')
         return lbl
 
     def _build(self):
@@ -398,12 +786,14 @@ class SharedFieldsPanel(QWidget):
 
         self.task_type = QComboBox()
         self.task_type.addItems(TASK_TYPES)
-        task_form.addRow(self._required_label("Task Type:"), self.task_type)
+        task_form.addRow(self._required_label("Task Type:"),
+                         _with_help(self.task_type, "task_type"))
 
         self.programming_lang = QComboBox()
         self.programming_lang.setEditable(True)
         self.programming_lang.addItems(PROGRAMMING_LANGUAGES)
-        task_form.addRow("Programming Language:", self.programming_lang)
+        task_form.addRow("Programming Language:",
+                         _with_help(self.programming_lang, "programming_lang"))
 
         task_group.setLayout(task_form)
         form_layout.addWidget(task_group)
@@ -418,7 +808,8 @@ class SharedFieldsPanel(QWidget):
         self.role_input.setPlaceholderText(
             "e.g. Senior Python developer, Technical writer ...")
         role_form.addRow(
-            self._required_label("Role / Persona:"), self.role_input)
+            self._required_label("Role / Persona:"),
+            _with_help(self.role_input, "role"))
 
         self.tone = QComboBox()
         self.tone.addItems([
@@ -426,7 +817,8 @@ class SharedFieldsPanel(QWidget):
             "Academic / Formal", "Concise / Direct", "Creative",
             "Instructional", "Empathetic",
         ])
-        role_form.addRow(self._required_label("Tone:"), self.tone)
+        role_form.addRow(self._required_label("Tone:"),
+                         _with_help(self.tone, "tone"))
 
         self.audience = QComboBox()
         self.audience.setEditable(True)
@@ -435,7 +827,8 @@ class SharedFieldsPanel(QWidget):
             "Senior engineers", "Non-technical stakeholders",
             "Students", "Executives", "Other",
         ])
-        role_form.addRow("Target Audience:", self.audience)
+        role_form.addRow("Target Audience:",
+                         _with_help(self.audience, "audience"))
 
         role_group.setLayout(role_form)
         form_layout.addWidget(role_group)
@@ -451,34 +844,39 @@ class SharedFieldsPanel(QWidget):
             "Provide background information or context for the task...")
         self.context_input.setMaximumHeight(90)
         content_form.addRow(
-            self._required_label("Context:"), self.context_input)
+            self._required_label("Context:"),
+            _with_help(self.context_input, "context"))
 
         self.instruction_input = QTextEdit()
         self.instruction_input.setPlaceholderText(
             "Describe the main task or question in detail...")
         self.instruction_input.setMaximumHeight(110)
         content_form.addRow(
-            self._required_label("Main Instruction:"), self.instruction_input)
+            self._required_label("Main Instruction:"),
+            _with_help(self.instruction_input, "instruction"))
 
         self.input_data = QTextEdit()
         self.input_data.setPlaceholderText(
             "Paste any input data, code snippets, or text to process "
             "(optional)...")
         self.input_data.setMaximumHeight(90)
-        content_form.addRow("Input Data:", self.input_data)
+        content_form.addRow("Input Data:",
+                            _with_help(self.input_data, "input_data"))
 
         self.constraints_input = QTextEdit()
         self.constraints_input.setPlaceholderText(
             "List constraints, rules, or things to avoid (optional)...")
         self.constraints_input.setMaximumHeight(80)
-        content_form.addRow("Constraints:", self.constraints_input)
+        content_form.addRow("Constraints:",
+                            _with_help(self.constraints_input, "constraints"))
 
         self.examples_input = QTextEdit()
         self.examples_input.setPlaceholderText(
             "Provide example input -> output pairs for few-shot prompting "
             "(optional)...")
         self.examples_input.setMaximumHeight(80)
-        content_form.addRow("Examples:", self.examples_input)
+        content_form.addRow("Examples:",
+                            _with_help(self.examples_input, "examples"))
 
         content_group.setLayout(content_form)
         form_layout.addWidget(content_group)
@@ -496,14 +894,16 @@ class SharedFieldsPanel(QWidget):
             "Step-by-step Guide",
         ])
         output_form.addRow(
-            self._required_label("Output Format:"), self.output_format)
+            self._required_label("Output Format:"),
+            _with_help(self.output_format, "output_format"))
 
         self.detail_level = QComboBox()
         self.detail_level.addItems([
             "Brief", "Moderate", "Detailed", "Comprehensive"])
         self.detail_level.setCurrentIndex(2)
         output_form.addRow(
-            self._required_label("Detail Level:"), self.detail_level)
+            self._required_label("Detail Level:"),
+            _with_help(self.detail_level, "detail_level"))
 
         self.output_language = QComboBox()
         self.output_language.setEditable(True)
@@ -512,14 +912,16 @@ class SharedFieldsPanel(QWidget):
             "Portuguese", "Chinese", "Japanese", "Korean",
             "Arabic", "Hindi", "Russian", "Dutch", "Slovenian", "Other",
         ])
-        output_form.addRow("Output Language:", self.output_language)
+        output_form.addRow("Output Language:",
+                           _with_help(self.output_language, "output_language"))
 
         self.max_length = QComboBox()
         self.max_length.addItems([
             "No limit", "~100 words", "~250 words", "~500 words",
             "~1000 words", "~2000 words",
         ])
-        output_form.addRow("Max Length:", self.max_length)
+        output_form.addRow("Max Length:",
+                           _with_help(self.max_length, "max_length"))
 
         output_group.setLayout(output_form)
         form_layout.addWidget(output_group)
@@ -531,22 +933,27 @@ class SharedFieldsPanel(QWidget):
             Qt.AlignmentFlag.AlignRight)
 
         self.chain_of_thought = QCheckBox("Enable step-by-step reasoning")
-        adv_form.addRow("Chain of Thought:", self.chain_of_thought)
+        adv_form.addRow("Chain of Thought:",
+                        _with_help(self.chain_of_thought, "chain_of_thought"))
 
         self.include_citations = QCheckBox("Request sources / references")
-        adv_form.addRow("Citations:", self.include_citations)
+        adv_form.addRow("Citations:",
+                        _with_help(self.include_citations, "citations"))
 
         self.temperature_hint = QComboBox()
         self.temperature_hint.addItems([
             "Default", "Precise (low creativity)",
             "Balanced", "Creative (high creativity)",
         ])
-        adv_form.addRow("Creativity Hint:", self.temperature_hint)
+        adv_form.addRow("Creativity Hint:",
+                        _with_help(self.temperature_hint, "creativity_hint"))
 
         self.additional_instructions = QLineEdit()
         self.additional_instructions.setPlaceholderText(
             "Any extra instructions to append...")
-        adv_form.addRow("Extra Instructions:", self.additional_instructions)
+        adv_form.addRow("Extra Instructions:",
+                        _with_help(self.additional_instructions,
+                                   "extra_instructions"))
 
         adv_group.setLayout(adv_form)
         form_layout.addWidget(adv_group)
@@ -648,11 +1055,12 @@ class ModelTab(QWidget):
             if opt["type"] == "combo":
                 widget = QComboBox()
                 widget.addItems(opt["items"])
-                opts_form.addRow(opt["label"], widget)
+                opts_form.addRow(opt["label"],
+                                _with_help(widget, key))
             elif opt["type"] == "check":
                 widget = QCheckBox(opt["label"])
                 widget.setChecked(opt.get("default", False))
-                opts_form.addRow("", widget)
+                opts_form.addRow("", _with_help(widget, key))
             else:
                 continue
             self.option_widgets[key] = widget
@@ -661,15 +1069,16 @@ class ModelTab(QWidget):
         layout.addWidget(opts_group)
 
         # ── Generated output ──
-        out_label = QLabel(f"\u25b8 output://{self.config['name'].lower()}")
-        out_label.setFont(QFont("Consolas", 11, QFont.Weight.Bold))
+        out_label = QLabel(f"Output — {self.config['name']}")
+        out_label.setFont(QFont("Segoe UI", 12, QFont.Weight.DemiBold))
         out_label.setObjectName("outputLabel")
         layout.addWidget(out_label)
 
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
-        self.output_text.setFont(QFont("Consolas", 10))
+        self.output_text.setFont(QFont("Cascadia Code", 10))
         self.output_text.setObjectName("outputArea")
+        _soft_shadow(self.output_text, "#000000", 16, 3, 0.06)
         layout.addWidget(self.output_text, 1)
 
         # ── Buttons ──
@@ -677,38 +1086,52 @@ class ModelTab(QWidget):
         btn_row.setSpacing(6)
 
         generate_btn = self._make_btn(
-            "GENERATE", "#00FF41", self._generate_prompt)
-        _glow(generate_btn, "#00FF41", 20, 0.4)
-        btn_row.addWidget(generate_btn)
+            "Generate", "#007AFF", self._generate_prompt, primary=True)
+        btn_row.addWidget(_btn_with_help(generate_btn, "btn_generate"))
+
+        engine_btn = self._make_btn(
+            "Engine", "#5856D6", self._generate_engine_prompt)
+        btn_row.addWidget(_btn_with_help(engine_btn, "btn_engine"))
 
         copy_btn = self._make_btn(
-            "COPY", "#00BFFF", self._copy_to_clipboard)
-        btn_row.addWidget(copy_btn)
+            "Copy", "#34C759", self._copy_to_clipboard)
+        btn_row.addWidget(_btn_with_help(copy_btn, "btn_copy"))
 
         save_btn = self._make_btn(
-            "SAVE", "#FFD700", self._save_to_file)
-        btn_row.addWidget(save_btn)
+            "Save", "#FF9500", self._save_to_file)
+        btn_row.addWidget(_btn_with_help(save_btn, "btn_save"))
 
         clear_btn = self._make_btn(
-            "CLEAR", "#FF4444", self._clear_all)
-        btn_row.addWidget(clear_btn)
+            "Clear", "#FF3B30", self._clear_all)
+        btn_row.addWidget(_btn_with_help(clear_btn, "btn_clear"))
 
         layout.addLayout(btn_row)
 
     @staticmethod
-    def _make_btn(label, color, slot):
-        btn = QPushButton(f"[ {label} ]")
-        btn.setFixedHeight(36)
+    def _make_btn(label, color, slot, primary=False):
+        btn = QPushButton(label)
+        btn.setFixedHeight(32)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn.setStyleSheet(
-            f"QPushButton {{ background: #0c0c0c; color: {color}; "
-            f"font-weight: bold; border: 1px solid {color}; "
-            f"border-radius: 2px; padding: 0 16px; "
-            f"font-family: Consolas; font-size: 9pt; }} "
-            f"QPushButton:hover {{ background: {color}; color: #0a0a0a; }} "
-            f"QPushButton:pressed {{ background: {color}; color: #0a0a0a; "
-            f"border: 2px solid {color}; }}"
-        )
+        if primary:
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {color}; color: #FFFFFF; "
+                f"font-weight: 600; border: none; "
+                f"border-radius: 8px; padding: 0 20px; "
+                f"font-size: 10pt; }} "
+                f"QPushButton:hover {{ background: qlineargradient("
+                f"x1:0, y1:0, x2:0, y2:1, stop:0 {color}, "
+                f"stop:1 #005EC4); }} "
+                f"QPushButton:pressed {{ background: #004EA2; }}"
+            )
+        else:
+            btn.setStyleSheet(
+                f"QPushButton {{ background: #F2F2F7; color: {color}; "
+                f"font-weight: 600; border: 1px solid #D1D1D6; "
+                f"border-radius: 8px; padding: 0 16px; "
+                f"font-size: 10pt; }} "
+                f"QPushButton:hover {{ background: #E5E5EA; }} "
+                f"QPushButton:pressed {{ background: #D1D1D6; }}"
+            )
         btn.clicked.connect(slot)
         return btn
 
@@ -743,6 +1166,53 @@ class ModelTab(QWidget):
 
         prompt = self.config["formatter"](data)
         self.output_text.setPlainText(prompt)
+
+    def _generate_engine_prompt(self):
+        """Generate a prompt via the Pydantic/Jinja2 engine layer."""
+        shared = self.shared.collect()
+
+        if not shared["instruction"]:
+            QMessageBox.warning(self, "Missing Input",
+                                "Please enter a Main Instruction.")
+            return
+        if not shared["role"]:
+            QMessageBox.warning(self, "Missing Input",
+                                "Please enter a Role / Persona.")
+            return
+
+        data = {**shared, **self._collect_model_fields()}
+        data["cot"] = (self.config["cot_text"]
+                       if self.shared.chain_of_thought.isChecked() else "")
+
+        model_name: str = self.config["name"]
+        fmt_label: str = self.shared.output_format.currentText()
+        examples_raw: str = self.shared.examples_input.toPlainText().strip()
+        enable_thinking: bool = data.get("extended_thinking", False)
+
+        try:
+            tpl: PromptTemplate = build_from_gui(
+                data,
+                model_name=model_name,
+                output_format_label=fmt_label,
+                enable_thinking=enable_thinking,
+                examples_raw=examples_raw,
+            )
+            result = tpl.render_for_provider()
+        except Exception as exc:
+            QMessageBox.critical(
+                self, "Engine Error",
+                f"Prompt validation/render failed:\n{exc}",
+            )
+            return
+
+        if isinstance(result, list):
+            # OpenAI format: pretty-print the message list
+            import json
+            output = json.dumps(result, indent=2, ensure_ascii=False)
+        else:
+            output = result
+
+        self.output_text.setPlainText(output)
 
     def _copy_to_clipboard(self):
         text = self.output_text.toPlainText()
@@ -804,18 +1274,17 @@ class PromptBuilderApp(QMainWindow):
         main_layout.setContentsMargins(16, 12, 16, 12)
         main_layout.setSpacing(10)
 
-        # Title with glow
-        title = QLabel("> AI_PROMPT_BUILDER")
-        title.setFont(QFont("Consolas", 20, QFont.Weight.Bold))
+        # Title
+        title = QLabel("AI Prompt Builder")
+        title.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setObjectName("appTitle")
-        _glow(title, "#00FF41", 30, 0.5)
         main_layout.addWidget(title)
 
         # Subtitle
         subtitle = QLabel(
-            "// select model tab  \u2192  configure  "
-            "\u2192  generate optimized prompt")
+            "Select a model  \u2192  Configure  "
+            "\u2192  Generate an optimized prompt")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setObjectName("appSubtitle")
         main_layout.addWidget(subtitle)
@@ -841,179 +1310,182 @@ class PromptBuilderApp(QMainWindow):
         splitter.setStretchFactor(0, 4)
         splitter.setStretchFactor(1, 6)
 
-        # ── Premium hacker stylesheet ──
+        # ── Apple-inspired stylesheet ──
         self.setStyleSheet("""
             /* ── Base ── */
             * {
-                font-family: "Consolas", "Fira Code", "Courier New", monospace;
+                font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue",
+                             "Arial", sans-serif;
             }
             QMainWindow, QWidget {
-                background: #08080a;
-                color: #b0b8c0;
+                background: #F5F5F7;
+                color: #1D1D1F;
             }
 
             /* ── Title area ── */
             #appTitle {
-                color: #00FF41;
+                color: #1D1D1F;
                 background: transparent;
-                padding: 4px;
-                letter-spacing: 2px;
+                padding: 8px 4px 0px 4px;
             }
             #appSubtitle {
-                color: #3a5a3a;
-                font-size: 9pt;
+                color: #86868B;
+                font-size: 10pt;
                 background: transparent;
-                padding-bottom: 6px;
+                padding-bottom: 8px;
             }
 
-            /* ── Group boxes ── */
+            /* ── Group boxes (card style) ── */
             QGroupBox {
-                font-weight: bold; font-size: 10pt;
-                color: #00cc55;
-                border: 1px solid #1a2e1a;
-                border-radius: 3px;
-                margin-top: 14px; padding-top: 20px;
-                background: #0a0c0a;
+                font-weight: 600; font-size: 10pt;
+                color: #1D1D1F;
+                border: 1px solid #D1D1D6;
+                border-radius: 12px;
+                margin-top: 16px; padding: 22px 14px 14px 14px;
+                background: #FFFFFF;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
-                left: 14px; padding: 0 8px;
-                color: #00cc55;
-                background: #0a0c0a;
+                left: 16px; padding: 0 8px;
+                color: #1D1D1F;
+                background: #FFFFFF;
             }
 
             /* ── Labels ── */
             QLabel {
                 font-size: 10pt;
-                color: #8a9a8a;
+                color: #3A3A3C;
                 background: transparent;
             }
 
             /* ── Input fields ── */
             QLineEdit, QTextEdit, QComboBox {
-                font-size: 10pt; padding: 5px 6px;
-                background: #0e100e;
-                color: #c0d0c0;
-                border: 1px solid #1a2e1a;
-                border-radius: 2px;
-                selection-background-color: #00FF41;
-                selection-color: #08080a;
+                font-size: 10pt; padding: 6px 10px;
+                background: #FFFFFF;
+                color: #1D1D1F;
+                border: 1px solid #D1D1D6;
+                border-radius: 8px;
+                selection-background-color: #007AFF;
+                selection-color: #FFFFFF;
             }
             QLineEdit:focus, QTextEdit:focus, QComboBox:on {
-                border: 1px solid #00cc55;
+                border: 2px solid #007AFF;
             }
             QLineEdit::placeholder, QTextEdit::placeholder {
-                color: #2a3a2a;
+                color: #AEAEB2;
             }
             QComboBox {
-                min-height: 28px;
+                min-height: 30px;
             }
             QComboBox::drop-down {
                 border: none;
-                background: #121412;
-                width: 24px;
+                background: transparent;
+                width: 28px;
             }
             QComboBox::down-arrow {
                 image: none;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 6px solid #00cc55;
-                margin-right: 6px;
+                border-top: 6px solid #86868B;
+                margin-right: 8px;
             }
             QComboBox QAbstractItemView {
-                background: #0e100e;
-                color: #c0d0c0;
-                border: 1px solid #00cc55;
-                selection-background-color: #00cc55;
-                selection-color: #08080a;
+                background: #FFFFFF;
+                color: #1D1D1F;
+                border: 1px solid #D1D1D6;
+                border-radius: 8px;
+                selection-background-color: #007AFF;
+                selection-color: #FFFFFF;
                 outline: none;
-                padding: 2px;
+                padding: 4px;
             }
 
             /* ── Checkboxes ── */
             QCheckBox {
                 font-size: 10pt;
-                color: #8a9a8a;
+                color: #3A3A3C;
                 spacing: 8px;
             }
             QCheckBox::indicator {
-                width: 16px; height: 16px;
-                border: 1px solid #1a2e1a;
-                border-radius: 2px;
-                background: #0e100e;
+                width: 18px; height: 18px;
+                border: 2px solid #C7C7CC;
+                border-radius: 5px;
+                background: #FFFFFF;
             }
             QCheckBox::indicator:hover {
-                border: 1px solid #00cc55;
+                border: 2px solid #007AFF;
             }
             QCheckBox::indicator:checked {
-                background: #00cc55;
-                border: 1px solid #00cc55;
+                background: #007AFF;
+                border: 2px solid #007AFF;
             }
 
-            /* ── Tabs ── */
+            /* ── Tabs (segmented control look) ── */
             QTabWidget::pane {
-                border: 1px solid #1a2e1a;
-                border-radius: 2px;
-                background: #08080a;
+                border: 1px solid #D1D1D6;
+                border-radius: 12px;
+                background: #FFFFFF;
                 top: -1px;
             }
             QTabBar::tab {
-                font-size: 9pt; font-weight: bold;
-                padding: 7px 18px;
-                color: #3a6a3a;
-                background: #0a0c0a;
-                border: 1px solid #1a2e1a;
+                font-size: 10pt; font-weight: 500;
+                padding: 8px 22px;
+                color: #86868B;
+                background: #E5E5EA;
+                border: 1px solid #D1D1D6;
                 border-bottom: none;
-                border-top-left-radius: 3px;
-                border-top-right-radius: 3px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
                 margin-right: 2px;
             }
             QTabBar::tab:selected {
-                background: #08080a;
-                color: #00FF41;
-                border-bottom: 2px solid #00FF41;
+                background: #FFFFFF;
+                color: #007AFF;
+                border-bottom: 2px solid #007AFF;
             }
             QTabBar::tab:!selected:hover {
-                background: #0e120e;
-                color: #00cc55;
+                background: #F2F2F7;
+                color: #3A3A3C;
             }
 
             /* ── Output area ── */
             #outputLabel {
-                color: #00cc55;
+                color: #1D1D1F;
                 background: transparent;
-                font-size: 11pt;
-                padding: 2px 0;
+                font-size: 12pt;
+                padding: 4px 0;
             }
             #outputArea {
-                background: #050605;
-                color: #00FF41;
-                border: 1px solid #0f1f0f;
-                border-radius: 2px;
-                padding: 10px;
+                background: #FAFAFA;
+                color: #1D1D1F;
+                border: 1px solid #E5E5EA;
+                border-radius: 10px;
+                padding: 12px;
+                font-family: "Cascadia Code", "SF Mono", "Menlo",
+                             "Consolas", monospace;
             }
             #outputArea:focus {
-                border: 1px solid #00cc55;
+                border: 2px solid #007AFF;
             }
 
-            /* ── Scrollbars ── */
+            /* ── Scrollbars (minimal, Apple-style) ── */
             QScrollArea {
                 background: transparent;
                 border: none;
             }
             QScrollBar:vertical {
-                background: #0a0c0a;
+                background: transparent;
                 width: 8px;
                 border: none;
                 border-radius: 4px;
             }
             QScrollBar::handle:vertical {
-                background: #1a2e1a;
+                background: #C7C7CC;
                 min-height: 40px;
                 border-radius: 4px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #00cc55;
+                background: #AEAEB2;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
@@ -1021,18 +1493,18 @@ class PromptBuilderApp(QMainWindow):
                 background: transparent;
             }
             QScrollBar:horizontal {
-                background: #0a0c0a;
+                background: transparent;
                 height: 8px;
                 border: none;
                 border-radius: 4px;
             }
             QScrollBar::handle:horizontal {
-                background: #1a2e1a;
+                background: #C7C7CC;
                 min-width: 40px;
                 border-radius: 4px;
             }
             QScrollBar::handle:horizontal:hover {
-                background: #00cc55;
+                background: #AEAEB2;
             }
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
             QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
@@ -1042,40 +1514,65 @@ class PromptBuilderApp(QMainWindow):
 
             /* ── Splitter ── */
             QSplitter::handle {
-                background: #1a2e1a;
+                background: #E5E5EA;
                 width: 1px;
             }
             QSplitter::handle:hover {
-                background: #00cc55;
+                background: #007AFF;
             }
 
             /* ── Message boxes ── */
             QMessageBox {
-                background: #0a0c0a;
+                background: #F5F5F7;
             }
             QMessageBox QLabel {
-                color: #c0d0c0;
+                color: #1D1D1F;
                 font-size: 10pt;
             }
             QMessageBox QPushButton {
-                background: #0e100e;
-                color: #00cc55;
-                border: 1px solid #1a2e1a;
-                border-radius: 2px;
+                background: #007AFF;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 8px;
                 padding: 6px 24px;
-                font-weight: bold;
+                font-weight: 600;
                 min-width: 70px;
             }
             QMessageBox QPushButton:hover {
-                background: #00cc55;
-                color: #08080a;
-                border: 1px solid #00cc55;
+                background: #005EC4;
             }
 
             /* ── File dialog ── */
             QFileDialog {
-                background: #0a0c0a;
-                color: #c0d0c0;
+                background: #F5F5F7;
+                color: #1D1D1F;
+            }
+
+            /* ── Form layout spacing ── */
+            QFormLayout {
+                spacing: 8px;
+            }
+
+            /* ── Help buttons ── */
+            #helpBtn {
+                background: #E5E5EA;
+                color: #007AFF;
+                border: none;
+                border-radius: 11px;
+                font-size: 9pt;
+                font-weight: 700;
+            }
+            #helpBtn:hover {
+                background: #007AFF;
+                color: #FFFFFF;
+            }
+            #helpBtn:pressed {
+                background: #005EC4;
+                color: #FFFFFF;
+            }
+            #helpWrapper {
+                background: transparent;
+                border: none;
             }
         """)
 
