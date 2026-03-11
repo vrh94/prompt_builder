@@ -404,7 +404,400 @@ FIELD_HELP = {
             "Best for: research, latest practices",
         ],
     },
+    "gui_language": {
+        "title": "GUI Language",
+        "description": "Change the display language of the user interface. This affects labels, buttons, and group titles. It does not change the generated prompt content or help dialog details.",
+        "examples": [
+            "English \u2014 default interface language",
+            "Sloven\u0161\u010dina \u2014 Slovenian interface",
+            "Espa\u00f1ol \u2014 Spanish interface",
+            "Deutsch \u2014 German interface",
+            "Fran\u00e7ais \u2014 French interface",
+        ],
+    },
 }
+
+# ── GUI language translations ──
+
+GUI_STRINGS = {
+    "en": {
+        "window_title": "AI Prompt Builder",
+        "app_title": "AI Prompt Builder",
+        "app_subtitle": "Select a model  \u2192  Configure  \u2192  Generate an optimized prompt",
+        "gui_language": "GUI Language:",
+        "group_task": "Task Configuration",
+        "group_role": "Role & Tone",
+        "group_content": "Prompt Content",
+        "group_output": "Output Settings",
+        "group_advanced": "Advanced Options",
+        "lbl_task_type": "Task Type:",
+        "lbl_prog_lang": "Programming Language:",
+        "lbl_role": "Role / Persona:",
+        "lbl_tone": "Tone:",
+        "lbl_audience": "Target Audience:",
+        "lbl_context": "Context:",
+        "lbl_instruction": "Main Instruction:",
+        "lbl_input_data": "Input Data:",
+        "lbl_constraints": "Constraints:",
+        "lbl_examples": "Examples:",
+        "lbl_output_format": "Output Format:",
+        "lbl_detail_level": "Detail Level:",
+        "lbl_output_language": "Output Language:",
+        "lbl_max_length": "Max Length:",
+        "lbl_cot": "Chain of Thought:",
+        "lbl_citations": "Citations:",
+        "lbl_creativity": "Creativity Hint:",
+        "lbl_extra": "Extra Instructions:",
+        "chk_cot": "Enable step-by-step reasoning",
+        "chk_citations": "Request sources / references",
+        "opt_model": "Model:",
+        "opt_mode": "Mode:",
+        "opt_safety": "Safety Level:",
+        "chk_xml_tags": "Wrap sections in XML tags (recommended)",
+        "chk_extended_thinking": "Enable extended thinking",
+        "chk_system_user_split": "Format as System + User messages",
+        "chk_json_mode": "Strict JSON output mode",
+        "chk_grounding": "Google Search grounding",
+        "chk_code_first": "Code-first output (code before explanation)",
+        "chk_web_search": "Enable web search references",
+        "ph_role": "e.g. Senior Python developer, Technical writer ...",
+        "ph_context": "Provide background information or context for the task...",
+        "ph_instruction": "Describe the main task or question in detail...",
+        "ph_input_data": "Paste any input data, code snippets, or text to process (optional)...",
+        "ph_constraints": "List constraints, rules, or things to avoid (optional)...",
+        "ph_examples": "Provide example input -> output pairs for few-shot prompting (optional)...",
+        "ph_extra": "Any extra instructions to append...",
+        "btn_generate": "Generate",
+        "btn_engine": "Engine",
+        "btn_copy": "Copy",
+        "btn_save": "Save",
+        "btn_clear": "Clear",
+        "output_label": "Output \u2014 {model}",
+        "options_label": "{model} Options",
+        "msg_missing_input": "Missing Input",
+        "msg_missing_instruction": "Please enter a Main Instruction.",
+        "msg_missing_role": "Please enter a Role / Persona.",
+        "msg_nothing_copy_title": "Nothing to Copy",
+        "msg_nothing_copy": "Generate a prompt first.",
+        "msg_copied_title": "Copied",
+        "msg_copied": "Prompt copied to clipboard.",
+        "msg_nothing_save_title": "Nothing to Save",
+        "msg_nothing_save": "Generate a prompt first.",
+        "msg_saved_title": "Saved",
+        "msg_saved": "Prompt saved to {path}",
+        "msg_error": "Error",
+        "msg_save_fail": "Could not save file:\n{error}",
+        "msg_engine_error": "Engine Error",
+        "msg_engine_fail": "Prompt validation/render failed:\n{error}",
+        "msg_save_dialog": "Save Prompt",
+    },
+    "sl": {
+        "window_title": "Graditelj AI pozivov",
+        "app_title": "Graditelj AI pozivov",
+        "app_subtitle": "Izberite model  \u2192  Konfigurirajte  \u2192  Generirajte optimiziran poziv",
+        "gui_language": "Jezik vmesnika:",
+        "group_task": "Konfiguracija naloge",
+        "group_role": "Vloga in ton",
+        "group_content": "Vsebina poziva",
+        "group_output": "Nastavitve izhoda",
+        "group_advanced": "Napredne mo\u017enosti",
+        "lbl_task_type": "Vrsta naloge:",
+        "lbl_prog_lang": "Programski jezik:",
+        "lbl_role": "Vloga / Persona:",
+        "lbl_tone": "Ton:",
+        "lbl_audience": "Ciljna publika:",
+        "lbl_context": "Kontekst:",
+        "lbl_instruction": "Glavno navodilo:",
+        "lbl_input_data": "Vhodni podatki:",
+        "lbl_constraints": "Omejitve:",
+        "lbl_examples": "Primeri:",
+        "lbl_output_format": "Format izhoda:",
+        "lbl_detail_level": "Raven podrobnosti:",
+        "lbl_output_language": "Jezik izhoda:",
+        "lbl_max_length": "Najve\u010dja dol\u017eina:",
+        "lbl_cot": "Veri\u017eno razmi\u0161ljanje:",
+        "lbl_citations": "Citati:",
+        "lbl_creativity": "Namig za kreativnost:",
+        "lbl_extra": "Dodatna navodila:",
+        "chk_cot": "Omogo\u010di razmi\u0161ljanje po korakih",
+        "chk_citations": "Zahtevaj vire / reference",
+        "opt_model": "Model:",
+        "opt_mode": "Na\u010din:",
+        "opt_safety": "Raven varnosti:",
+        "chk_xml_tags": "Ovij razdelke v XML oznake (priporo\u010deno)",
+        "chk_extended_thinking": "Omogo\u010di raz\u0161irjeno razmi\u0161ljanje",
+        "chk_system_user_split": "Oblikuj kot Sistemsko + Uporabni\u0161ko sporo\u010dilo",
+        "chk_json_mode": "Strog JSON izhodni na\u010din",
+        "chk_grounding": "Google Search utemeljitev",
+        "chk_code_first": "Najprej koda (koda pred razlago)",
+        "chk_web_search": "Omogo\u010di reference spletnega iskanja",
+        "ph_role": "npr. Vi\u0161ji Python razvijalec, Tehni\u010dni pisec ...",
+        "ph_context": "Navedite ozadje ali kontekst naloge...",
+        "ph_instruction": "Podrobno opi\u0161ite glavno nalogo ali vpra\u0161anje...",
+        "ph_input_data": "Prilepite vhodne podatke, kodo ali besedilo za obdelavo (neobvezno)...",
+        "ph_constraints": "Navedite omejitve, pravila ali stvari, ki se jim je treba izogniti (neobvezno)...",
+        "ph_examples": "Navedite primere vhod -> izhod za few-shot pozivanje (neobvezno)...",
+        "ph_extra": "Dodatna navodila za dodajanje...",
+        "btn_generate": "Generiraj",
+        "btn_engine": "Motor",
+        "btn_copy": "Kopiraj",
+        "btn_save": "Shrani",
+        "btn_clear": "Po\u010disti",
+        "output_label": "Izhod \u2014 {model}",
+        "options_label": "Mo\u017enosti {model}",
+        "msg_missing_input": "Manjkajo\u010d vnos",
+        "msg_missing_instruction": "Prosim vnesite glavno navodilo.",
+        "msg_missing_role": "Prosim vnesite vlogo / persono.",
+        "msg_nothing_copy_title": "Ni za kopiranje",
+        "msg_nothing_copy": "Najprej generirajte poziv.",
+        "msg_copied_title": "Kopirano",
+        "msg_copied": "Poziv kopiran v odlo\u017ei\u0161\u010de.",
+        "msg_nothing_save_title": "Ni za shranjevanje",
+        "msg_nothing_save": "Najprej generirajte poziv.",
+        "msg_saved_title": "Shranjeno",
+        "msg_saved": "Poziv shranjen v {path}",
+        "msg_error": "Napaka",
+        "msg_save_fail": "Datoteke ni mogo\u010de shraniti:\n{error}",
+        "msg_engine_error": "Napaka motorja",
+        "msg_engine_fail": "Validacija/generiranje poziva ni uspelo:\n{error}",
+        "msg_save_dialog": "Shrani poziv",
+    },
+    "es": {
+        "window_title": "Constructor de Prompts IA",
+        "app_title": "Constructor de Prompts IA",
+        "app_subtitle": "Seleccione un modelo  \u2192  Configure  \u2192  Genere un prompt optimizado",
+        "gui_language": "Idioma de interfaz:",
+        "group_task": "Configuraci\u00f3n de tarea",
+        "group_role": "Rol y tono",
+        "group_content": "Contenido del prompt",
+        "group_output": "Configuraci\u00f3n de salida",
+        "group_advanced": "Opciones avanzadas",
+        "lbl_task_type": "Tipo de tarea:",
+        "lbl_prog_lang": "Lenguaje de programaci\u00f3n:",
+        "lbl_role": "Rol / Persona:",
+        "lbl_tone": "Tono:",
+        "lbl_audience": "P\u00fablico objetivo:",
+        "lbl_context": "Contexto:",
+        "lbl_instruction": "Instrucci\u00f3n principal:",
+        "lbl_input_data": "Datos de entrada:",
+        "lbl_constraints": "Restricciones:",
+        "lbl_examples": "Ejemplos:",
+        "lbl_output_format": "Formato de salida:",
+        "lbl_detail_level": "Nivel de detalle:",
+        "lbl_output_language": "Idioma de salida:",
+        "lbl_max_length": "Longitud m\u00e1xima:",
+        "lbl_cot": "Cadena de pensamiento:",
+        "lbl_citations": "Citas:",
+        "lbl_creativity": "Sugerencia de creatividad:",
+        "lbl_extra": "Instrucciones adicionales:",
+        "chk_cot": "Activar razonamiento paso a paso",
+        "chk_citations": "Solicitar fuentes / referencias",
+        "opt_model": "Modelo:",
+        "opt_mode": "Modo:",
+        "opt_safety": "Nivel de seguridad:",
+        "chk_xml_tags": "Envolver secciones en etiquetas XML (recomendado)",
+        "chk_extended_thinking": "Activar pensamiento extendido",
+        "chk_system_user_split": "Formatear como mensajes Sistema + Usuario",
+        "chk_json_mode": "Modo estricto de salida JSON",
+        "chk_grounding": "Fundamentaci\u00f3n con Google Search",
+        "chk_code_first": "C\u00f3digo primero (c\u00f3digo antes de explicaci\u00f3n)",
+        "chk_web_search": "Activar referencias de b\u00fasqueda web",
+        "ph_role": "ej. Desarrollador senior de Python, Escritor t\u00e9cnico ...",
+        "ph_context": "Proporcione informaci\u00f3n de contexto para la tarea...",
+        "ph_instruction": "Describa la tarea o pregunta principal en detalle...",
+        "ph_input_data": "Pegue datos de entrada, fragmentos de c\u00f3digo o texto (opcional)...",
+        "ph_constraints": "Liste restricciones, reglas o cosas a evitar (opcional)...",
+        "ph_examples": "Proporcione pares de ejemplo entrada -> salida (opcional)...",
+        "ph_extra": "Instrucciones adicionales para agregar...",
+        "btn_generate": "Generar",
+        "btn_engine": "Motor",
+        "btn_copy": "Copiar",
+        "btn_save": "Guardar",
+        "btn_clear": "Limpiar",
+        "output_label": "Salida \u2014 {model}",
+        "options_label": "Opciones de {model}",
+        "msg_missing_input": "Entrada faltante",
+        "msg_missing_instruction": "Por favor ingrese una instrucci\u00f3n principal.",
+        "msg_missing_role": "Por favor ingrese un rol / persona.",
+        "msg_nothing_copy_title": "Nada para copiar",
+        "msg_nothing_copy": "Primero genere un prompt.",
+        "msg_copied_title": "Copiado",
+        "msg_copied": "Prompt copiado al portapapeles.",
+        "msg_nothing_save_title": "Nada para guardar",
+        "msg_nothing_save": "Primero genere un prompt.",
+        "msg_saved_title": "Guardado",
+        "msg_saved": "Prompt guardado en {path}",
+        "msg_error": "Error",
+        "msg_save_fail": "No se pudo guardar el archivo:\n{error}",
+        "msg_engine_error": "Error de motor",
+        "msg_engine_fail": "La validaci\u00f3n/generaci\u00f3n del prompt fall\u00f3:\n{error}",
+        "msg_save_dialog": "Guardar prompt",
+    },
+    "de": {
+        "window_title": "KI-Prompt-Generator",
+        "app_title": "KI-Prompt-Generator",
+        "app_subtitle": "Modell w\u00e4hlen  \u2192  Konfigurieren  \u2192  Optimierten Prompt generieren",
+        "gui_language": "Oberfl\u00e4chensprache:",
+        "group_task": "Aufgabenkonfiguration",
+        "group_role": "Rolle & Ton",
+        "group_content": "Prompt-Inhalt",
+        "group_output": "Ausgabeeinstellungen",
+        "group_advanced": "Erweiterte Optionen",
+        "lbl_task_type": "Aufgabentyp:",
+        "lbl_prog_lang": "Programmiersprache:",
+        "lbl_role": "Rolle / Persona:",
+        "lbl_tone": "Ton:",
+        "lbl_audience": "Zielgruppe:",
+        "lbl_context": "Kontext:",
+        "lbl_instruction": "Hauptanweisung:",
+        "lbl_input_data": "Eingabedaten:",
+        "lbl_constraints": "Einschr\u00e4nkungen:",
+        "lbl_examples": "Beispiele:",
+        "lbl_output_format": "Ausgabeformat:",
+        "lbl_detail_level": "Detailgrad:",
+        "lbl_output_language": "Ausgabesprache:",
+        "lbl_max_length": "Maximale L\u00e4nge:",
+        "lbl_cot": "Gedankenkette:",
+        "lbl_citations": "Zitate:",
+        "lbl_creativity": "Kreativit\u00e4tshinweis:",
+        "lbl_extra": "Zus\u00e4tzliche Anweisungen:",
+        "chk_cot": "Schrittweises Denken aktivieren",
+        "chk_citations": "Quellen / Referenzen anfordern",
+        "opt_model": "Modell:",
+        "opt_mode": "Modus:",
+        "opt_safety": "Sicherheitsstufe:",
+        "chk_xml_tags": "Abschnitte in XML-Tags einwickeln (empfohlen)",
+        "chk_extended_thinking": "Erweitertes Denken aktivieren",
+        "chk_system_user_split": "Als System- + Benutzernachrichten formatieren",
+        "chk_json_mode": "Strikter JSON-Ausgabemodus",
+        "chk_grounding": "Google-Suche-Fundierung",
+        "chk_code_first": "Code zuerst (Code vor Erkl\u00e4rung)",
+        "chk_web_search": "Websuche-Referenzen aktivieren",
+        "ph_role": "z.B. Senior Python-Entwickler, Technischer Autor ...",
+        "ph_context": "Hintergrundinformationen oder Kontext f\u00fcr die Aufgabe...",
+        "ph_instruction": "Beschreiben Sie die Hauptaufgabe oder Frage im Detail...",
+        "ph_input_data": "Eingabedaten, Codeausschnitte oder Text einf\u00fcgen (optional)...",
+        "ph_constraints": "Einschr\u00e4nkungen, Regeln oder zu Vermeidendes auflisten (optional)...",
+        "ph_examples": "Beispielpaare Eingabe -> Ausgabe angeben (optional)...",
+        "ph_extra": "Zus\u00e4tzliche Anweisungen zum Anh\u00e4ngen...",
+        "btn_generate": "Generieren",
+        "btn_engine": "Engine",
+        "btn_copy": "Kopieren",
+        "btn_save": "Speichern",
+        "btn_clear": "Leeren",
+        "output_label": "Ausgabe \u2014 {model}",
+        "options_label": "{model}-Optionen",
+        "msg_missing_input": "Fehlende Eingabe",
+        "msg_missing_instruction": "Bitte geben Sie eine Hauptanweisung ein.",
+        "msg_missing_role": "Bitte geben Sie eine Rolle / Persona ein.",
+        "msg_nothing_copy_title": "Nichts zu kopieren",
+        "msg_nothing_copy": "Generieren Sie zuerst einen Prompt.",
+        "msg_copied_title": "Kopiert",
+        "msg_copied": "Prompt in die Zwischenablage kopiert.",
+        "msg_nothing_save_title": "Nichts zu speichern",
+        "msg_nothing_save": "Generieren Sie zuerst einen Prompt.",
+        "msg_saved_title": "Gespeichert",
+        "msg_saved": "Prompt gespeichert unter {path}",
+        "msg_error": "Fehler",
+        "msg_save_fail": "Datei konnte nicht gespeichert werden:\n{error}",
+        "msg_engine_error": "Engine-Fehler",
+        "msg_engine_fail": "Prompt-Validierung/Generierung fehlgeschlagen:\n{error}",
+        "msg_save_dialog": "Prompt speichern",
+    },
+    "fr": {
+        "window_title": "Constructeur de Prompts IA",
+        "app_title": "Constructeur de Prompts IA",
+        "app_subtitle": "S\u00e9lectionnez un mod\u00e8le  \u2192  Configurez  \u2192  G\u00e9n\u00e9rez un prompt optimis\u00e9",
+        "gui_language": "Langue de l\u2019interface :",
+        "group_task": "Configuration de la t\u00e2che",
+        "group_role": "R\u00f4le et ton",
+        "group_content": "Contenu du prompt",
+        "group_output": "Param\u00e8tres de sortie",
+        "group_advanced": "Options avanc\u00e9es",
+        "lbl_task_type": "Type de t\u00e2che :",
+        "lbl_prog_lang": "Langage de programmation :",
+        "lbl_role": "R\u00f4le / Persona :",
+        "lbl_tone": "Ton :",
+        "lbl_audience": "Public cible :",
+        "lbl_context": "Contexte :",
+        "lbl_instruction": "Instruction principale :",
+        "lbl_input_data": "Donn\u00e9es d\u2019entr\u00e9e :",
+        "lbl_constraints": "Contraintes :",
+        "lbl_examples": "Exemples :",
+        "lbl_output_format": "Format de sortie :",
+        "lbl_detail_level": "Niveau de d\u00e9tail :",
+        "lbl_output_language": "Langue de sortie :",
+        "lbl_max_length": "Longueur maximale :",
+        "lbl_cot": "Cha\u00eene de pens\u00e9e :",
+        "lbl_citations": "Citations :",
+        "lbl_creativity": "Indice de cr\u00e9ativit\u00e9 :",
+        "lbl_extra": "Instructions suppl\u00e9mentaires :",
+        "chk_cot": "Activer le raisonnement \u00e9tape par \u00e9tape",
+        "chk_citations": "Demander des sources / r\u00e9f\u00e9rences",
+        "opt_model": "Mod\u00e8le :",
+        "opt_mode": "Mode :",
+        "opt_safety": "Niveau de s\u00e9curit\u00e9 :",
+        "chk_xml_tags": "Encadrer les sections avec des balises XML (recommand\u00e9)",
+        "chk_extended_thinking": "Activer la r\u00e9flexion \u00e9tendue",
+        "chk_system_user_split": "Formater en messages Syst\u00e8me + Utilisateur",
+        "chk_json_mode": "Mode de sortie JSON strict",
+        "chk_grounding": "Ancrage Google Search",
+        "chk_code_first": "Code d\u2019abord (code avant explication)",
+        "chk_web_search": "Activer les r\u00e9f\u00e9rences de recherche web",
+        "ph_role": "ex. D\u00e9veloppeur Python senior, R\u00e9dacteur technique ...",
+        "ph_context": "Fournissez des informations de contexte pour la t\u00e2che...",
+        "ph_instruction": "D\u00e9crivez la t\u00e2che ou question principale en d\u00e9tail...",
+        "ph_input_data": "Collez des donn\u00e9es, extraits de code ou texte \u00e0 traiter (optionnel)...",
+        "ph_constraints": "Listez les contraintes, r\u00e8gles ou choses \u00e0 \u00e9viter (optionnel)...",
+        "ph_examples": "Fournissez des paires d\u2019exemples entr\u00e9e -> sortie (optionnel)...",
+        "ph_extra": "Instructions suppl\u00e9mentaires \u00e0 ajouter...",
+        "btn_generate": "G\u00e9n\u00e9rer",
+        "btn_engine": "Moteur",
+        "btn_copy": "Copier",
+        "btn_save": "Enregistrer",
+        "btn_clear": "Effacer",
+        "output_label": "Sortie \u2014 {model}",
+        "options_label": "Options de {model}",
+        "msg_missing_input": "Entr\u00e9e manquante",
+        "msg_missing_instruction": "Veuillez entrer une instruction principale.",
+        "msg_missing_role": "Veuillez entrer un r\u00f4le / persona.",
+        "msg_nothing_copy_title": "Rien \u00e0 copier",
+        "msg_nothing_copy": "G\u00e9n\u00e9rez d\u2019abord un prompt.",
+        "msg_copied_title": "Copi\u00e9",
+        "msg_copied": "Prompt copi\u00e9 dans le presse-papiers.",
+        "msg_nothing_save_title": "Rien \u00e0 enregistrer",
+        "msg_nothing_save": "G\u00e9n\u00e9rez d\u2019abord un prompt.",
+        "msg_saved_title": "Enregistr\u00e9",
+        "msg_saved": "Prompt enregistr\u00e9 dans {path}",
+        "msg_error": "Erreur",
+        "msg_save_fail": "Impossible d\u2019enregistrer le fichier :\n{error}",
+        "msg_engine_error": "Erreur du moteur",
+        "msg_engine_fail": "La validation/g\u00e9n\u00e9ration du prompt a \u00e9chou\u00e9 :\n{error}",
+        "msg_save_dialog": "Enregistrer le prompt",
+    },
+}
+
+GUI_LANGUAGES = {
+    "English": "en",
+    "Sloven\u0161\u010dina": "sl",
+    "Espa\u00f1ol": "es",
+    "Deutsch": "de",
+    "Fran\u00e7ais": "fr",
+}
+
+_current_lang = "en"
+
+
+def _t(key, fallback=None):
+    """Look up a translated string for the current GUI language."""
+    strings = GUI_STRINGS.get(_current_lang, GUI_STRINGS["en"])
+    result = strings.get(key)
+    if result is not None:
+        return result
+    result = GUI_STRINGS["en"].get(key)
+    if result is not None:
+        return result
+    return fallback if fallback is not None else key
 
 
 # ── Per-model prompt formatters ──
@@ -778,38 +1171,41 @@ class SharedFieldsPanel(QWidget):
         form_layout = QVBoxLayout(inner)
         form_layout.setSpacing(10)
 
+        self._groups = {}
+        self._req_labels = {}
+        self._labels = {}
+
         # --- Task Configuration ---
-        task_group = QGroupBox("Task Configuration")
+        self._groups["task"] = task_group = QGroupBox(_t("group_task"))
         task_form = QFormLayout()
-        task_form.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight)
+        task_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.task_type = QComboBox()
         self.task_type.addItems(TASK_TYPES)
-        task_form.addRow(self._required_label("Task Type:"),
-                         _with_help(self.task_type, "task_type"))
+        self._req_labels["lbl_task_type"] = lbl = self._required_label(
+            _t("lbl_task_type"))
+        task_form.addRow(lbl, _with_help(self.task_type, "task_type"))
 
         self.programming_lang = QComboBox()
         self.programming_lang.setEditable(True)
         self.programming_lang.addItems(PROGRAMMING_LANGUAGES)
-        task_form.addRow("Programming Language:",
-                         _with_help(self.programming_lang, "programming_lang"))
+        self._labels["lbl_prog_lang"] = lbl = QLabel(_t("lbl_prog_lang"))
+        task_form.addRow(lbl, _with_help(self.programming_lang,
+                                         "programming_lang"))
 
         task_group.setLayout(task_form)
         form_layout.addWidget(task_group)
 
         # --- Role & Tone ---
-        role_group = QGroupBox("Role & Tone")
+        self._groups["role"] = role_group = QGroupBox(_t("group_role"))
         role_form = QFormLayout()
-        role_form.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight)
+        role_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.role_input = QLineEdit()
-        self.role_input.setPlaceholderText(
-            "e.g. Senior Python developer, Technical writer ...")
-        role_form.addRow(
-            self._required_label("Role / Persona:"),
-            _with_help(self.role_input, "role"))
+        self.role_input.setPlaceholderText(_t("ph_role"))
+        self._req_labels["lbl_role"] = lbl = self._required_label(
+            _t("lbl_role"))
+        role_form.addRow(lbl, _with_help(self.role_input, "role"))
 
         self.tone = QComboBox()
         self.tone.addItems([
@@ -817,8 +1213,9 @@ class SharedFieldsPanel(QWidget):
             "Academic / Formal", "Concise / Direct", "Creative",
             "Instructional", "Empathetic",
         ])
-        role_form.addRow(self._required_label("Tone:"),
-                         _with_help(self.tone, "tone"))
+        self._req_labels["lbl_tone"] = lbl = self._required_label(
+            _t("lbl_tone"))
+        role_form.addRow(lbl, _with_help(self.tone, "tone"))
 
         self.audience = QComboBox()
         self.audience.setEditable(True)
@@ -827,65 +1224,61 @@ class SharedFieldsPanel(QWidget):
             "Senior engineers", "Non-technical stakeholders",
             "Students", "Executives", "Other",
         ])
-        role_form.addRow("Target Audience:",
-                         _with_help(self.audience, "audience"))
+        self._labels["lbl_audience"] = lbl = QLabel(_t("lbl_audience"))
+        role_form.addRow(lbl, _with_help(self.audience, "audience"))
 
         role_group.setLayout(role_form)
         form_layout.addWidget(role_group)
 
         # --- Prompt Content ---
-        content_group = QGroupBox("Prompt Content")
+        self._groups["content"] = content_group = QGroupBox(
+            _t("group_content"))
         content_form = QFormLayout()
-        content_form.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight)
+        content_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.context_input = QTextEdit()
-        self.context_input.setPlaceholderText(
-            "Provide background information or context for the task...")
+        self.context_input.setPlaceholderText(_t("ph_context"))
         self.context_input.setMaximumHeight(90)
-        content_form.addRow(
-            self._required_label("Context:"),
-            _with_help(self.context_input, "context"))
+        self._req_labels["lbl_context"] = lbl = self._required_label(
+            _t("lbl_context"))
+        content_form.addRow(lbl, _with_help(self.context_input, "context"))
 
         self.instruction_input = QTextEdit()
-        self.instruction_input.setPlaceholderText(
-            "Describe the main task or question in detail...")
+        self.instruction_input.setPlaceholderText(_t("ph_instruction"))
         self.instruction_input.setMaximumHeight(110)
-        content_form.addRow(
-            self._required_label("Main Instruction:"),
-            _with_help(self.instruction_input, "instruction"))
+        self._req_labels["lbl_instruction"] = lbl = self._required_label(
+            _t("lbl_instruction"))
+        content_form.addRow(lbl,
+                            _with_help(self.instruction_input, "instruction"))
 
         self.input_data = QTextEdit()
-        self.input_data.setPlaceholderText(
-            "Paste any input data, code snippets, or text to process "
-            "(optional)...")
+        self.input_data.setPlaceholderText(_t("ph_input_data"))
         self.input_data.setMaximumHeight(90)
-        content_form.addRow("Input Data:",
-                            _with_help(self.input_data, "input_data"))
+        self._labels["lbl_input_data"] = lbl = QLabel(_t("lbl_input_data"))
+        content_form.addRow(lbl, _with_help(self.input_data, "input_data"))
 
         self.constraints_input = QTextEdit()
-        self.constraints_input.setPlaceholderText(
-            "List constraints, rules, or things to avoid (optional)...")
+        self.constraints_input.setPlaceholderText(_t("ph_constraints"))
         self.constraints_input.setMaximumHeight(80)
-        content_form.addRow("Constraints:",
+        self._labels["lbl_constraints"] = lbl = QLabel(_t("lbl_constraints"))
+        content_form.addRow(lbl,
                             _with_help(self.constraints_input, "constraints"))
 
         self.examples_input = QTextEdit()
-        self.examples_input.setPlaceholderText(
-            "Provide example input -> output pairs for few-shot prompting "
-            "(optional)...")
+        self.examples_input.setPlaceholderText(_t("ph_examples"))
         self.examples_input.setMaximumHeight(80)
-        content_form.addRow("Examples:",
+        self._labels["lbl_examples"] = lbl = QLabel(_t("lbl_examples"))
+        content_form.addRow(lbl,
                             _with_help(self.examples_input, "examples"))
 
         content_group.setLayout(content_form)
         form_layout.addWidget(content_group)
 
         # --- Output Settings ---
-        output_group = QGroupBox("Output Settings")
+        self._groups["output"] = output_group = QGroupBox(
+            _t("group_output"))
         output_form = QFormLayout()
-        output_form.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight)
+        output_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.output_format = QComboBox()
         self.output_format.addItems([
@@ -893,17 +1286,19 @@ class SharedFieldsPanel(QWidget):
             "Bullet Points", "Numbered List", "Table", "Essay / Prose",
             "Step-by-step Guide",
         ])
-        output_form.addRow(
-            self._required_label("Output Format:"),
-            _with_help(self.output_format, "output_format"))
+        self._req_labels["lbl_output_format"] = lbl = self._required_label(
+            _t("lbl_output_format"))
+        output_form.addRow(lbl,
+                           _with_help(self.output_format, "output_format"))
 
         self.detail_level = QComboBox()
         self.detail_level.addItems([
             "Brief", "Moderate", "Detailed", "Comprehensive"])
         self.detail_level.setCurrentIndex(2)
-        output_form.addRow(
-            self._required_label("Detail Level:"),
-            _with_help(self.detail_level, "detail_level"))
+        self._req_labels["lbl_detail_level"] = lbl = self._required_label(
+            _t("lbl_detail_level"))
+        output_form.addRow(lbl,
+                           _with_help(self.detail_level, "detail_level"))
 
         self.output_language = QComboBox()
         self.output_language.setEditable(True)
@@ -912,7 +1307,9 @@ class SharedFieldsPanel(QWidget):
             "Portuguese", "Chinese", "Japanese", "Korean",
             "Arabic", "Hindi", "Russian", "Dutch", "Slovenian", "Other",
         ])
-        output_form.addRow("Output Language:",
+        self._labels["lbl_output_language"] = lbl = QLabel(
+            _t("lbl_output_language"))
+        output_form.addRow(lbl,
                            _with_help(self.output_language, "output_language"))
 
         self.max_length = QComboBox()
@@ -920,24 +1317,26 @@ class SharedFieldsPanel(QWidget):
             "No limit", "~100 words", "~250 words", "~500 words",
             "~1000 words", "~2000 words",
         ])
-        output_form.addRow("Max Length:",
-                           _with_help(self.max_length, "max_length"))
+        self._labels["lbl_max_length"] = lbl = QLabel(_t("lbl_max_length"))
+        output_form.addRow(lbl, _with_help(self.max_length, "max_length"))
 
         output_group.setLayout(output_form)
         form_layout.addWidget(output_group)
 
         # --- Advanced Options ---
-        adv_group = QGroupBox("Advanced Options")
+        self._groups["advanced"] = adv_group = QGroupBox(
+            _t("group_advanced"))
         adv_form = QFormLayout()
-        adv_form.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight)
+        adv_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        self.chain_of_thought = QCheckBox("Enable step-by-step reasoning")
-        adv_form.addRow("Chain of Thought:",
+        self.chain_of_thought = QCheckBox(_t("chk_cot"))
+        self._labels["lbl_cot"] = lbl = QLabel(_t("lbl_cot"))
+        adv_form.addRow(lbl,
                         _with_help(self.chain_of_thought, "chain_of_thought"))
 
-        self.include_citations = QCheckBox("Request sources / references")
-        adv_form.addRow("Citations:",
+        self.include_citations = QCheckBox(_t("chk_citations"))
+        self._labels["lbl_citations"] = lbl = QLabel(_t("lbl_citations"))
+        adv_form.addRow(lbl,
                         _with_help(self.include_citations, "citations"))
 
         self.temperature_hint = QComboBox()
@@ -945,13 +1344,14 @@ class SharedFieldsPanel(QWidget):
             "Default", "Precise (low creativity)",
             "Balanced", "Creative (high creativity)",
         ])
-        adv_form.addRow("Creativity Hint:",
+        self._labels["lbl_creativity"] = lbl = QLabel(_t("lbl_creativity"))
+        adv_form.addRow(lbl,
                         _with_help(self.temperature_hint, "creativity_hint"))
 
         self.additional_instructions = QLineEdit()
-        self.additional_instructions.setPlaceholderText(
-            "Any extra instructions to append...")
-        adv_form.addRow("Extra Instructions:",
+        self.additional_instructions.setPlaceholderText(_t("ph_extra"))
+        self._labels["lbl_extra"] = lbl = QLabel(_t("lbl_extra"))
+        adv_form.addRow(lbl,
                         _with_help(self.additional_instructions,
                                    "extra_instructions"))
 
@@ -1026,6 +1426,30 @@ class SharedFieldsPanel(QWidget):
         self.chain_of_thought.setChecked(False)
         self.include_citations.setChecked(False)
 
+    def retranslate(self):
+        """Update all visible text to match the current GUI language."""
+        for key, lbl in self._req_labels.items():
+            lbl.setText(
+                f'{_t(key)} <span style="color:#FF3B30;">*</span>')
+        for key, lbl in self._labels.items():
+            lbl.setText(_t(key))
+        group_keys = {
+            "task": "group_task", "role": "group_role",
+            "content": "group_content", "output": "group_output",
+            "advanced": "group_advanced",
+        }
+        for gk, tk in group_keys.items():
+            self._groups[gk].setTitle(_t(tk))
+        self.chain_of_thought.setText(_t("chk_cot"))
+        self.include_citations.setText(_t("chk_citations"))
+        self.role_input.setPlaceholderText(_t("ph_role"))
+        self.context_input.setPlaceholderText(_t("ph_context"))
+        self.instruction_input.setPlaceholderText(_t("ph_instruction"))
+        self.input_data.setPlaceholderText(_t("ph_input_data"))
+        self.constraints_input.setPlaceholderText(_t("ph_constraints"))
+        self.examples_input.setPlaceholderText(_t("ph_examples"))
+        self.additional_instructions.setPlaceholderText(_t("ph_extra"))
+
 
 # ── Model-specific tab (right side, one per model) ──
 
@@ -1044,35 +1468,42 @@ class ModelTab(QWidget):
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(10)
 
+        self._opt_labels = {}
+        self._opt_checks = {}
+
         # ── Model-specific options ──
-        opts_group = QGroupBox(f"{self.config['name']} Options")
+        self._opts_group = QGroupBox(
+            _t("options_label").format(model=self.config["name"]))
         opts_form = QFormLayout()
-        opts_form.setLabelAlignment(
-            Qt.AlignmentFlag.AlignRight)
+        opts_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         for opt in self.config["specific_options"]:
             key = opt["key"]
             if opt["type"] == "combo":
                 widget = QComboBox()
                 widget.addItems(opt["items"])
-                opts_form.addRow(opt["label"],
-                                _with_help(widget, key))
+                lbl = QLabel(_t(f"opt_{key}"))
+                self._opt_labels[key] = lbl
+                opts_form.addRow(lbl, _with_help(widget, key))
             elif opt["type"] == "check":
-                widget = QCheckBox(opt["label"])
+                widget = QCheckBox(_t(f"chk_{key}"))
                 widget.setChecked(opt.get("default", False))
+                self._opt_checks[key] = widget
                 opts_form.addRow("", _with_help(widget, key))
             else:
                 continue
             self.option_widgets[key] = widget
 
-        opts_group.setLayout(opts_form)
-        layout.addWidget(opts_group)
+        self._opts_group.setLayout(opts_form)
+        layout.addWidget(self._opts_group)
 
         # ── Generated output ──
-        out_label = QLabel(f"Output — {self.config['name']}")
-        out_label.setFont(QFont("Segoe UI", 12, QFont.Weight.DemiBold))
-        out_label.setObjectName("outputLabel")
-        layout.addWidget(out_label)
+        self._out_label = QLabel(
+            _t("output_label").format(model=self.config["name"]))
+        self._out_label.setFont(
+            QFont("Segoe UI", 12, QFont.Weight.DemiBold))
+        self._out_label.setObjectName("outputLabel")
+        layout.addWidget(self._out_label)
 
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
@@ -1085,25 +1516,26 @@ class ModelTab(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(6)
 
-        generate_btn = self._make_btn(
-            "Generate", "#007AFF", self._generate_prompt, primary=True)
-        btn_row.addWidget(_btn_with_help(generate_btn, "btn_generate"))
+        self._generate_btn = self._make_btn(
+            _t("btn_generate"), "#007AFF", self._generate_prompt,
+            primary=True)
+        btn_row.addWidget(_btn_with_help(self._generate_btn, "btn_generate"))
 
-        engine_btn = self._make_btn(
-            "Engine", "#5856D6", self._generate_engine_prompt)
-        btn_row.addWidget(_btn_with_help(engine_btn, "btn_engine"))
+        self._engine_btn = self._make_btn(
+            _t("btn_engine"), "#5856D6", self._generate_engine_prompt)
+        btn_row.addWidget(_btn_with_help(self._engine_btn, "btn_engine"))
 
-        copy_btn = self._make_btn(
-            "Copy", "#34C759", self._copy_to_clipboard)
-        btn_row.addWidget(_btn_with_help(copy_btn, "btn_copy"))
+        self._copy_btn = self._make_btn(
+            _t("btn_copy"), "#34C759", self._copy_to_clipboard)
+        btn_row.addWidget(_btn_with_help(self._copy_btn, "btn_copy"))
 
-        save_btn = self._make_btn(
-            "Save", "#FF9500", self._save_to_file)
-        btn_row.addWidget(_btn_with_help(save_btn, "btn_save"))
+        self._save_btn = self._make_btn(
+            _t("btn_save"), "#FF9500", self._save_to_file)
+        btn_row.addWidget(_btn_with_help(self._save_btn, "btn_save"))
 
-        clear_btn = self._make_btn(
-            "Clear", "#FF3B30", self._clear_all)
-        btn_row.addWidget(_btn_with_help(clear_btn, "btn_clear"))
+        self._clear_btn = self._make_btn(
+            _t("btn_clear"), "#FF3B30", self._clear_all)
+        btn_row.addWidget(_btn_with_help(self._clear_btn, "btn_clear"))
 
         layout.addLayout(btn_row)
 
@@ -1152,12 +1584,12 @@ class ModelTab(QWidget):
         shared = self.shared.collect()
 
         if not shared["instruction"]:
-            QMessageBox.warning(self, "Missing Input",
-                                "Please enter a Main Instruction.")
+            QMessageBox.warning(self, _t("msg_missing_input"),
+                                _t("msg_missing_instruction"))
             return
         if not shared["role"]:
-            QMessageBox.warning(self, "Missing Input",
-                                "Please enter a Role / Persona.")
+            QMessageBox.warning(self, _t("msg_missing_input"),
+                                _t("msg_missing_role"))
             return
 
         data = {**shared, **self._collect_model_fields()}
@@ -1172,12 +1604,12 @@ class ModelTab(QWidget):
         shared = self.shared.collect()
 
         if not shared["instruction"]:
-            QMessageBox.warning(self, "Missing Input",
-                                "Please enter a Main Instruction.")
+            QMessageBox.warning(self, _t("msg_missing_input"),
+                                _t("msg_missing_instruction"))
             return
         if not shared["role"]:
-            QMessageBox.warning(self, "Missing Input",
-                                "Please enter a Role / Persona.")
+            QMessageBox.warning(self, _t("msg_missing_input"),
+                                _t("msg_missing_role"))
             return
 
         data = {**shared, **self._collect_model_fields()}
@@ -1200,8 +1632,8 @@ class ModelTab(QWidget):
             result = tpl.render_for_provider()
         except Exception as exc:
             QMessageBox.critical(
-                self, "Engine Error",
-                f"Prompt validation/render failed:\n{exc}",
+                self, _t("msg_engine_error"),
+                _t("msg_engine_fail").format(error=exc),
             )
             return
 
@@ -1217,21 +1649,21 @@ class ModelTab(QWidget):
     def _copy_to_clipboard(self):
         text = self.output_text.toPlainText()
         if not text:
-            QMessageBox.information(self, "Nothing to Copy",
-                                    "Generate a prompt first.")
+            QMessageBox.information(self, _t("msg_nothing_copy_title"),
+                                    _t("msg_nothing_copy"))
             return
         QApplication.clipboard().setText(text)
-        QMessageBox.information(self, "Copied",
-                                "Prompt copied to clipboard.")
+        QMessageBox.information(self, _t("msg_copied_title"),
+                                _t("msg_copied"))
 
     def _save_to_file(self):
         text = self.output_text.toPlainText()
         if not text:
-            QMessageBox.information(self, "Nothing to Save",
-                                    "Generate a prompt first.")
+            QMessageBox.information(self, _t("msg_nothing_save_title"),
+                                    _t("msg_nothing_save"))
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save Prompt", "",
+            self, _t("msg_save_dialog"), "",
             "Text Files (*.txt);;Markdown (*.md);;All Files (*)"
         )
         if path:
@@ -1239,11 +1671,13 @@ class ModelTab(QWidget):
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(text)
             except OSError as e:
-                QMessageBox.critical(self, "Error",
-                                     f"Could not save file:\n{e}")
+                QMessageBox.critical(
+                    self, _t("msg_error"),
+                    _t("msg_save_fail").format(error=e))
                 return
-            QMessageBox.information(self, "Saved",
-                                    f"Prompt saved to {path}")
+            QMessageBox.information(
+                self, _t("msg_saved_title"),
+                _t("msg_saved").format(path=path))
 
     def _clear_all(self):
         for opt in self.config["specific_options"]:
@@ -1256,6 +1690,23 @@ class ModelTab(QWidget):
                 widget.setCurrentIndex(0)
         self.output_text.clear()
         self.shared.clear_all()
+
+    def retranslate(self):
+        """Update all visible text to match the current GUI language."""
+        name = self.config["name"]
+        self._opts_group.setTitle(
+            _t("options_label").format(model=name))
+        self._out_label.setText(
+            _t("output_label").format(model=name))
+        for key, lbl in self._opt_labels.items():
+            lbl.setText(_t(f"opt_{key}"))
+        for key, wid in self._opt_checks.items():
+            wid.setText(_t(f"chk_{key}"))
+        self._generate_btn.setText(_t("btn_generate"))
+        self._engine_btn.setText(_t("btn_engine"))
+        self._copy_btn.setText(_t("btn_copy"))
+        self._save_btn.setText(_t("btn_save"))
+        self._clear_btn.setText(_t("btn_clear"))
 
 
 # ── Main window ──
@@ -1275,19 +1726,33 @@ class PromptBuilderApp(QMainWindow):
         main_layout.setSpacing(10)
 
         # Title
-        title = QLabel("AI Prompt Builder")
-        title.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setObjectName("appTitle")
-        main_layout.addWidget(title)
+        self._title = QLabel(_t("app_title"))
+        self._title.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
+        self._title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._title.setObjectName("appTitle")
+        main_layout.addWidget(self._title)
 
-        # Subtitle
-        subtitle = QLabel(
-            "Select a model  \u2192  Configure  "
-            "\u2192  Generate an optimized prompt")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setObjectName("appSubtitle")
-        main_layout.addWidget(subtitle)
+        # Subtitle + Language selector row
+        header_row = QHBoxLayout()
+        header_row.setSpacing(12)
+
+        self._subtitle = QLabel(_t("app_subtitle"))
+        self._subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._subtitle.setObjectName("appSubtitle")
+        header_row.addWidget(self._subtitle, 1)
+
+        self._lang_label = QLabel(_t("gui_language"))
+        self._lang_label.setObjectName("appSubtitle")
+        header_row.addWidget(self._lang_label)
+
+        self._lang_combo = QComboBox()
+        self._lang_combo.addItems(list(GUI_LANGUAGES.keys()))
+        self._lang_combo.setFixedWidth(140)
+        self._lang_combo.currentTextChanged.connect(self._change_language)
+        header_row.addWidget(self._lang_combo)
+        header_row.addWidget(_make_help_btn("gui_language"))
+
+        main_layout.addLayout(header_row)
 
         # Main splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -1575,6 +2040,21 @@ class PromptBuilderApp(QMainWindow):
                 border: none;
             }
         """)
+
+    def _change_language(self, display_name):
+        """Switch the GUI language and retranslate all widgets."""
+        global _current_lang
+        lang_code = GUI_LANGUAGES.get(display_name, "en")
+        if lang_code == _current_lang:
+            return
+        _current_lang = lang_code
+        self.setWindowTitle(_t("window_title"))
+        self._title.setText(_t("app_title"))
+        self._subtitle.setText(_t("app_subtitle"))
+        self._lang_label.setText(_t("gui_language"))
+        self.shared_panel.retranslate()
+        for tab in self.model_tabs:
+            tab.retranslate()
 
 
 def main():
