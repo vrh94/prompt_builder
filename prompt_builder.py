@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QTextEdit, QComboBox, QPushButton, QGroupBox,
     QFormLayout, QSplitter, QMessageBox, QCheckBox,
-    QScrollArea, QFrame, QFileDialog, QTabWidget, QMenu
+    QScrollArea, QFrame, QFileDialog, QTabWidget
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -76,11 +76,11 @@ CREATIVITY_MAP = {
 
 
 # ── Per-model prompt formatters ──
-# Each receives a dict with collected field values and returns the prompt string.
+# Each receives a dict with shared + model-specific field values.
 
 def _format_claude(d):
     """Claude: XML tags (recommended by Anthropic) or Markdown fallback."""
-    use_xml = d["use_xml"]
+    use_xml = d.get("xml_tags", True)
 
     def sec(tag, content, md_label=None):
         if use_xml:
@@ -106,6 +106,13 @@ def _format_claude(d):
         parts.append(sec("constraints", d["constraints"], "Constraints"))
     parts.append(sec("output_requirements", d["output_reqs"],
                       "Output Requirements"))
+    # Extended thinking
+    if d.get("extended_thinking"):
+        parts.append(sec(
+            "thinking_instructions",
+            "Use extended thinking to reason deeply about this problem. "
+            "Work through your reasoning thoroughly before responding.",
+        ))
     if d["cot"]:
         parts.append(sec("thinking_instructions", d["cot"]))
     if d["citations"]:
@@ -120,7 +127,9 @@ def _format_claude(d):
 
 def _format_chatgpt(d):
     """ChatGPT: System message + User message structure."""
-    # -- System message: identity, behaviour, tone --
+    use_split = d.get("system_user_split", True)
+
+    # -- System-level content: identity, behaviour, tone --
     sys_parts = [f"You are {d['role']}."]
     if d["guidance"]:
         sys_parts.append(d["guidance"])
@@ -131,7 +140,7 @@ def _format_chatgpt(d):
         sys_parts.append(d["creativity_hint"])
     system_msg = " ".join(sys_parts)
 
-    # -- User message: context → examples → data → task → constraints → reqs --
+    # -- User-level content --
     user_parts = []
     if d["context"]:
         user_parts.append(f"## Context\n{d['context']}")
@@ -143,6 +152,10 @@ def _format_chatgpt(d):
     if d["constraints"]:
         user_parts.append(f"## Constraints\n{d['constraints']}")
     user_parts.append(f"## Output Requirements\n{d['output_reqs']}")
+    if d.get("json_mode"):
+        user_parts.append(
+            "IMPORTANT: Respond with valid JSON only. "
+            "No additional text outside the JSON structure.")
     if d["cot"]:
         user_parts.append(d["cot"])
     if d["citations"]:
@@ -152,7 +165,11 @@ def _format_chatgpt(d):
         user_parts.append(d["extra"])
     user_msg = "\n\n".join(user_parts)
 
-    return f"# System Message\n{system_msg}\n\n# User Message\n{user_msg}"
+    if use_split:
+        return (f"# System Message\n{system_msg}\n\n"
+                f"# User Message\n{user_msg}")
+    # Flat format — merge everything
+    return f"{system_msg}\n\n{user_msg}"
 
 
 def _format_gemini(d):
@@ -174,6 +191,19 @@ def _format_gemini(d):
     if d["constraints"]:
         parts.append(f"**Constraints:**\n{d['constraints']}")
     parts.append(f"**Output Format:**\n{d['output_reqs']}")
+    if d.get("grounding"):
+        parts.append(
+            "Ground your response with current, verifiable information. "
+            "Cite sources where applicable.")
+    safety = d.get("safety", "Default")
+    if safety == "Strict":
+        parts.append(
+            "Apply strict safety guidelines. Avoid speculative, "
+            "harmful, or unverified content.")
+    elif safety == "Permissive":
+        parts.append(
+            "Be thorough and complete in your response. "
+            "Discuss nuanced topics with appropriate context.")
     if d["cot"]:
         parts.append(d["cot"])
     if d["citations"]:
@@ -198,7 +228,16 @@ def _format_copilot(d):
     if task_bits:
         parts.append(f"Task: {' '.join(task_bits)}")
 
-    parts.append(f"Tone: {d['tone_line']}")
+    mode = d.get("mode", "Balanced")
+    if mode == "Creative":
+        parts.append("Tone: Be creative and exploratory. "
+                      "Offer innovative solutions and ideas.")
+    elif mode == "Precise":
+        parts.append("Tone: Be precise, concise, and strictly factual. "
+                      "Minimize speculation.")
+    else:
+        parts.append(f"Tone: {d['tone_line']}")
+
     if d["context"]:
         parts.append(f"Context:\n{d['context']}")
     if d["examples"]:
@@ -209,6 +248,14 @@ def _format_copilot(d):
     if d["constraints"]:
         parts.append(f"Constraints:\n{d['constraints']}")
     parts.append(f"Requirements:\n{d['output_reqs']}")
+    if d.get("code_first"):
+        parts.append(
+            "Prioritize code output. Lead with the code solution, "
+            "then provide brief explanations only where needed.")
+    if d.get("web_search"):
+        parts.append(
+            "Reference current web information where relevant. "
+            "Cite sources.")
     if d["cot"]:
         parts.append(d["cot"])
     if d["citations"]:
@@ -221,95 +268,117 @@ def _format_copilot(d):
 
 
 # ── Model configurations ──
+# "specific_options" defines model-specific UI fields built dynamically.
+# Types: "combo" (dropdown), "check" (checkbox)
 
 MODEL_CONFIGS = [
     {
         "name": "Claude",
         "accent": "#D97706",
         "accent_hover": "#B45309",
-        "xml_default": True,
-        "show_xml_toggle": True,
-        "cot_label": "Ask Claude to reason in <thinking> tags",
         "cot_text": (
             "Before answering, work through your reasoning inside "
             "<thinking> tags. Then provide your final answer outside "
             "those tags."
         ),
         "formatter": _format_claude,
+        "specific_options": [
+            {"type": "combo", "key": "model", "label": "Model:",
+             "items": ["Claude Opus 4", "Claude Sonnet 4",
+                       "Claude Haiku 3.5"]},
+            {"type": "check", "key": "xml_tags",
+             "label": "Wrap sections in XML tags (recommended)",
+             "default": True},
+            {"type": "check", "key": "extended_thinking",
+             "label": "Enable extended thinking",
+             "default": False},
+        ],
     },
     {
         "name": "ChatGPT",
         "accent": "#10A37F",
         "accent_hover": "#0E8C6B",
-        "xml_default": False,
-        "show_xml_toggle": False,
-        "cot_label": "Ask ChatGPT to think step-by-step",
         "cot_text": (
             "Let's approach this step by step. Think carefully "
             "before giving your final answer."
         ),
         "formatter": _format_chatgpt,
+        "specific_options": [
+            {"type": "combo", "key": "model", "label": "Model:",
+             "items": ["GPT-4.1", "GPT-4.1 mini", "GPT-4o",
+                       "GPT-4o mini", "o3", "o4-mini"]},
+            {"type": "check", "key": "system_user_split",
+             "label": "Format as System + User messages",
+             "default": True},
+            {"type": "check", "key": "json_mode",
+             "label": "Strict JSON output mode",
+             "default": False},
+        ],
     },
     {
         "name": "Gemini",
         "accent": "#4285F4",
         "accent_hover": "#3367C7",
-        "xml_default": False,
-        "show_xml_toggle": False,
-        "cot_label": "Ask Gemini to think step-by-step",
         "cot_text": (
             "Think through this step-by-step, explaining your reasoning "
             "at each stage before providing your final answer."
         ),
         "formatter": _format_gemini,
+        "specific_options": [
+            {"type": "combo", "key": "model", "label": "Model:",
+             "items": ["Gemini 2.5 Pro", "Gemini 2.5 Flash",
+                       "Gemini 2.0 Flash"]},
+            {"type": "check", "key": "grounding",
+             "label": "Google Search grounding",
+             "default": False},
+            {"type": "combo", "key": "safety", "label": "Safety Level:",
+             "items": ["Default", "Permissive", "Strict"]},
+        ],
     },
     {
         "name": "Copilot",
         "accent": "#0078D4",
         "accent_hover": "#005FA3",
-        "xml_default": False,
-        "show_xml_toggle": False,
-        "cot_label": "Ask Copilot to reason step-by-step",
         "cot_text": (
             "Break this down step by step. Show your reasoning "
             "before giving the final answer."
         ),
         "formatter": _format_copilot,
+        "specific_options": [
+            {"type": "combo", "key": "mode", "label": "Mode:",
+             "items": ["Balanced", "Creative", "Precise"]},
+            {"type": "check", "key": "code_first",
+             "label": "Code-first output (code before explanation)",
+             "default": False},
+            {"type": "check", "key": "web_search",
+             "label": "Enable web search references",
+             "default": False},
+        ],
     },
 ]
 
 
-# ── Reusable prompt-builder tab (one per model) ──
+# ── Shared input fields panel (always visible, left side) ──
 
-class PromptBuilderTab(QWidget):
-    """Self-contained prompt builder form + output panel for one AI model."""
+class SharedFieldsPanel(QWidget):
+    """All input fields that are common across every model."""
 
-    # Set by PromptBuilderApp after all tabs are created
-    send_to_callback = None
-
-    def __init__(self, config, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.config = config
-        self._build_form()
+        self._build()
 
     @staticmethod
     def _required_label(text):
         return QLabel(f'{text} <span style="color:red;">*</span>')
 
-    def _build_form(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 8, 0, 0)
-
-        splitter = QSplitter(Qt.Horizontal)
-        layout.addWidget(splitter, 1)
-
-        # ── Left panel (scrollable inputs) ──
+    def _build(self):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
-        left_widget = QWidget()
-        left_layout = QVBoxLayout(left_widget)
-        left_layout.setSpacing(10)
+
+        inner = QWidget()
+        form_layout = QVBoxLayout(inner)
+        form_layout.setSpacing(10)
 
         # --- Task Configuration ---
         task_group = QGroupBox("Task Configuration")
@@ -326,7 +395,7 @@ class PromptBuilderTab(QWidget):
         task_form.addRow("Programming Language:", self.programming_lang)
 
         task_group.setLayout(task_form)
-        left_layout.addWidget(task_group)
+        form_layout.addWidget(task_group)
 
         # --- Role & Tone ---
         role_group = QGroupBox("Role & Tone")
@@ -357,7 +426,7 @@ class PromptBuilderTab(QWidget):
         role_form.addRow("Target Audience:", self.audience)
 
         role_group.setLayout(role_form)
-        left_layout.addWidget(role_group)
+        form_layout.addWidget(role_group)
 
         # --- Prompt Content ---
         content_group = QGroupBox("Prompt Content")
@@ -399,7 +468,7 @@ class PromptBuilderTab(QWidget):
         content_form.addRow("Examples:", self.examples_input)
 
         content_group.setLayout(content_form)
-        left_layout.addWidget(content_group)
+        form_layout.addWidget(content_group)
 
         # --- Output Settings ---
         output_group = QGroupBox("Output Settings")
@@ -439,24 +508,18 @@ class PromptBuilderTab(QWidget):
         output_form.addRow("Max Length:", self.max_length)
 
         output_group.setLayout(output_form)
-        left_layout.addWidget(output_group)
+        form_layout.addWidget(output_group)
 
         # --- Advanced Options ---
         adv_group = QGroupBox("Advanced Options")
         adv_form = QFormLayout()
         adv_form.setLabelAlignment(Qt.AlignRight)
 
-        self.chain_of_thought = QCheckBox(self.config["cot_label"])
+        self.chain_of_thought = QCheckBox("Enable step-by-step reasoning")
         adv_form.addRow("Chain of Thought:", self.chain_of_thought)
 
         self.include_citations = QCheckBox("Request sources / references")
         adv_form.addRow("Citations:", self.include_citations)
-
-        # XML toggle — only shown for models that benefit from it
-        self.xml_tags = QCheckBox("Wrap prompt sections in XML tags")
-        self.xml_tags.setChecked(self.config["xml_default"])
-        if self.config["show_xml_toggle"]:
-            adv_form.addRow("XML Tags:", self.xml_tags)
 
         self.temperature_hint = QComboBox()
         self.temperature_hint.addItems([
@@ -471,20 +534,123 @@ class PromptBuilderTab(QWidget):
         adv_form.addRow("Extra Instructions:", self.additional_instructions)
 
         adv_group.setLayout(adv_form)
-        left_layout.addWidget(adv_group)
+        form_layout.addWidget(adv_group)
 
-        left_layout.addStretch()
-        scroll.setWidget(left_widget)
-        splitter.addWidget(scroll)
+        form_layout.addStretch()
+        scroll.setWidget(inner)
 
-        # ── Right panel (output + buttons) ──
-        right_widget = QWidget()
-        right_layout = QVBoxLayout(right_widget)
-        right_layout.setSpacing(8)
+        # Wrap scroll in this widget's layout
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(scroll)
 
-        out_label = QLabel(f"Generated Prompt — {self.config['name']}")
+    def collect(self):
+        """Return all shared field values as a dict."""
+        tone = self.tone.currentText()
+        audience = self.audience.currentText()
+        task = self.task_type.currentText()
+        fmt = self.output_format.currentText()
+        detail = self.detail_level.currentText()
+        out_lang = self.output_language.currentText()
+        max_len = self.max_length.currentText()
+        lang = self.programming_lang.currentText()
+
+        reqs = [
+            f"- Format the response as {fmt.lower()}.",
+            f"- Provide a {detail.lower()} level of detail.",
+        ]
+        if out_lang != "English":
+            reqs.append(f"- Respond in {out_lang}.")
+        if max_len != "No limit":
+            reqs.append(f"- Keep the response within {max_len}.")
+
+        return {
+            "role": self.role_input.text().strip(),
+            "guidance": TASK_GUIDANCE.get(task, ""),
+            "lang": lang if lang != "(not applicable)" else "",
+            "tone_line": (
+                f"Use a {tone.lower()} tone, "
+                f"targeting {audience.lower()}."
+            ),
+            "context": self.context_input.toPlainText().strip(),
+            "examples": self.examples_input.toPlainText().strip(),
+            "input_data": self.input_data.toPlainText().strip(),
+            "instruction": self.instruction_input.toPlainText().strip(),
+            "constraints": self.constraints_input.toPlainText().strip(),
+            "output_reqs": "\n".join(reqs),
+            "citations": self.include_citations.isChecked(),
+            "creativity_hint": CREATIVITY_MAP.get(
+                self.temperature_hint.currentText(), ""),
+            "extra": self.additional_instructions.text().strip(),
+        }
+
+    def clear_all(self):
+        """Reset every shared field to its default."""
+        self.role_input.clear()
+        self.context_input.clear()
+        self.instruction_input.clear()
+        self.input_data.clear()
+        self.constraints_input.clear()
+        self.examples_input.clear()
+        self.additional_instructions.clear()
+        self.task_type.setCurrentIndex(0)
+        self.programming_lang.setCurrentIndex(0)
+        self.tone.setCurrentIndex(0)
+        self.audience.setCurrentIndex(0)
+        self.output_format.setCurrentIndex(0)
+        self.detail_level.setCurrentIndex(2)
+        self.output_language.setCurrentIndex(0)
+        self.max_length.setCurrentIndex(0)
+        self.temperature_hint.setCurrentIndex(0)
+        self.chain_of_thought.setChecked(False)
+        self.include_citations.setChecked(False)
+
+
+# ── Model-specific tab (right side, one per model) ──
+
+class ModelTab(QWidget):
+    """Model-specific options + output + buttons.  Reads shared fields
+    from the SharedFieldsPanel passed at construction time."""
+
+    def __init__(self, config, shared_panel, parent=None):
+        super().__init__(parent)
+        self.config = config
+        self.shared = shared_panel
+        # Dynamically created model-specific widgets, keyed by option "key"
+        self.option_widgets = {}
+        self._build()
+
+    def _build(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(8)
+
+        # ── Model-specific options ──
+        opts_group = QGroupBox(f"{self.config['name']} Options")
+        opts_form = QFormLayout()
+        opts_form.setLabelAlignment(Qt.AlignRight)
+
+        for opt in self.config["specific_options"]:
+            key = opt["key"]
+            if opt["type"] == "combo":
+                widget = QComboBox()
+                widget.addItems(opt["items"])
+                opts_form.addRow(opt["label"], widget)
+            elif opt["type"] == "check":
+                widget = QCheckBox(opt["label"])
+                widget.setChecked(opt.get("default", False))
+                opts_form.addRow("", widget)
+            else:
+                continue
+            self.option_widgets[key] = widget
+
+        opts_group.setLayout(opts_form)
+        layout.addWidget(opts_group)
+
+        # ── Generated output ──
+        out_label = QLabel(f"Generated Prompt \u2014 {self.config['name']}")
         out_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        right_layout.addWidget(out_label)
+        layout.addWidget(out_label)
 
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
@@ -493,22 +659,22 @@ class PromptBuilderTab(QWidget):
             "QTextEdit { background: #1E1E2E; color: #CDD6F4; "
             "border: 1px solid #45475A; border-radius: 6px; padding: 8px; }"
         )
-        right_layout.addWidget(self.output_text, 1)
+        layout.addWidget(self.output_text, 1)
 
-        # Buttons
+        # ── Buttons ──
         btn_row = QHBoxLayout()
         accent = self.config["accent"]
         accent_hover = self.config["accent_hover"]
 
-        self.generate_btn = QPushButton("Generate Prompt")
-        self.generate_btn.setFixedHeight(38)
-        self.generate_btn.setStyleSheet(
+        generate_btn = QPushButton("Generate Prompt")
+        generate_btn.setFixedHeight(38)
+        generate_btn.setStyleSheet(
             f"QPushButton {{ background: {accent}; color: white; "
             f"font-weight: bold; border-radius: 6px; padding: 0 20px; }} "
             f"QPushButton:hover {{ background: {accent_hover}; }}"
         )
-        self.generate_btn.clicked.connect(self._generate_prompt)
-        btn_row.addWidget(self.generate_btn)
+        generate_btn.clicked.connect(self._generate_prompt)
+        btn_row.addWidget(generate_btn)
 
         copy_btn = QPushButton("Copy to Clipboard")
         copy_btn.setFixedHeight(38)
@@ -540,86 +706,39 @@ class PromptBuilderTab(QWidget):
         clear_btn.clicked.connect(self._clear_all)
         btn_row.addWidget(clear_btn)
 
-        # "Send to..." button with dropdown menu for other models
-        self.send_btn = QPushButton("Send to...")
-        self.send_btn.setFixedHeight(38)
-        self.send_btn.setStyleSheet(
-            "QPushButton { background: #475569; color: white; "
-            "font-weight: bold; border-radius: 6px; padding: 0 20px; } "
-            "QPushButton:hover { background: #334155; } "
-            "QPushButton::menu-indicator { subcontrol-position: right center; "
-            "subcontrol-origin: padding; right: 6px; }"
-        )
-        self.send_menu = QMenu(self)
-        self.send_btn.setMenu(self.send_menu)
-        btn_row.addWidget(self.send_btn)
+        layout.addLayout(btn_row)
 
-        right_layout.addLayout(btn_row)
-        splitter.addWidget(right_widget)
+    # ── Data collection ──
 
-        splitter.setStretchFactor(0, 5)
-        splitter.setStretchFactor(1, 5)
-
-    # ── Collect field values into a dict for the formatter ──
-
-    def _collect_fields(self):
-        tone = self.tone.currentText()
-        audience = self.audience.currentText()
-        task = self.task_type.currentText()
-        fmt = self.output_format.currentText()
-        detail = self.detail_level.currentText()
-        out_lang = self.output_language.currentText()
-        max_len = self.max_length.currentText()
-
-        reqs = [
-            f"- Format the response as {fmt.lower()}.",
-            f"- Provide a {detail.lower()} level of detail.",
-        ]
-        if out_lang != "English":
-            reqs.append(f"- Respond in {out_lang}.")
-        if max_len != "No limit":
-            reqs.append(f"- Keep the response within {max_len}.")
-
-        lang = self.programming_lang.currentText()
-
-        return {
-            "role": self.role_input.text().strip(),
-            "guidance": TASK_GUIDANCE.get(task, ""),
-            "lang": lang if lang != "(not applicable)" else "",
-            "tone_line": (
-                f"Use a {tone.lower()} tone, "
-                f"targeting {audience.lower()}."
-            ),
-            "context": self.context_input.toPlainText().strip(),
-            "examples": self.examples_input.toPlainText().strip(),
-            "input_data": self.input_data.toPlainText().strip(),
-            "instruction": self.instruction_input.toPlainText().strip(),
-            "constraints": self.constraints_input.toPlainText().strip(),
-            "output_reqs": "\n".join(reqs),
-            "cot": (self.config["cot_text"]
-                    if self.chain_of_thought.isChecked() else ""),
-            "citations": self.include_citations.isChecked(),
-            "creativity_hint": CREATIVITY_MAP.get(
-                self.temperature_hint.currentText(), ""),
-            "extra": self.additional_instructions.text().strip(),
-            "use_xml": self.xml_tags.isChecked(),
-        }
+    def _collect_model_fields(self):
+        """Read model-specific widget values into a dict."""
+        result = {}
+        for key, widget in self.option_widgets.items():
+            if isinstance(widget, QCheckBox):
+                result[key] = widget.isChecked()
+            elif isinstance(widget, QComboBox):
+                result[key] = widget.currentText()
+        return result
 
     # ── Actions ──
 
     def _generate_prompt(self):
-        instruction = self.instruction_input.toPlainText().strip()
-        if not instruction:
+        shared = self.shared.collect()
+
+        if not shared["instruction"]:
             QMessageBox.warning(self, "Missing Input",
                                 "Please enter a Main Instruction.")
             return
-        role = self.role_input.text().strip()
-        if not role:
+        if not shared["role"]:
             QMessageBox.warning(self, "Missing Input",
                                 "Please enter a Role / Persona.")
             return
 
-        data = self._collect_fields()
+        # Merge shared + model-specific + CoT
+        data = {**shared, **self._collect_model_fields()}
+        data["cot"] = (self.config["cot_text"]
+                       if self.shared.chain_of_thought.isChecked() else "")
+
         prompt = self.config["formatter"](data)
         self.output_text.setPlainText(prompt)
 
@@ -654,85 +773,29 @@ class PromptBuilderTab(QWidget):
             QMessageBox.information(self, "Saved",
                                     f"Prompt saved to {path}")
 
-    def export_state(self):
-        """Return all user-entered field values as a dict."""
-        return {
-            "role": self.role_input.text(),
-            "context": self.context_input.toPlainText(),
-            "instruction": self.instruction_input.toPlainText(),
-            "input_data": self.input_data.toPlainText(),
-            "constraints": self.constraints_input.toPlainText(),
-            "examples": self.examples_input.toPlainText(),
-            "extra": self.additional_instructions.text(),
-            "task_type": self.task_type.currentIndex(),
-            "programming_lang": self.programming_lang.currentText(),
-            "tone": self.tone.currentIndex(),
-            "audience": self.audience.currentText(),
-            "output_format": self.output_format.currentIndex(),
-            "detail_level": self.detail_level.currentIndex(),
-            "output_language": self.output_language.currentText(),
-            "max_length": self.max_length.currentIndex(),
-            "temperature_hint": self.temperature_hint.currentIndex(),
-            "chain_of_thought": self.chain_of_thought.isChecked(),
-            "include_citations": self.include_citations.isChecked(),
-        }
-
-    def import_state(self, state):
-        """Populate all fields from a state dict."""
-        self.role_input.setText(state.get("role", ""))
-        self.context_input.setPlainText(state.get("context", ""))
-        self.instruction_input.setPlainText(state.get("instruction", ""))
-        self.input_data.setPlainText(state.get("input_data", ""))
-        self.constraints_input.setPlainText(state.get("constraints", ""))
-        self.examples_input.setPlainText(state.get("examples", ""))
-        self.additional_instructions.setText(state.get("extra", ""))
-        self.task_type.setCurrentIndex(state.get("task_type", 0))
-        # Editable combos: set text directly to handle custom entries
-        self.programming_lang.setEditText(state.get("programming_lang", ""))
-        self.tone.setCurrentIndex(state.get("tone", 0))
-        self.audience.setEditText(state.get("audience", ""))
-        self.output_format.setCurrentIndex(state.get("output_format", 0))
-        self.detail_level.setCurrentIndex(state.get("detail_level", 2))
-        self.output_language.setEditText(state.get("output_language", ""))
-        self.max_length.setCurrentIndex(state.get("max_length", 0))
-        self.temperature_hint.setCurrentIndex(
-            state.get("temperature_hint", 0))
-        self.chain_of_thought.setChecked(state.get("chain_of_thought", False))
-        self.include_citations.setChecked(
-            state.get("include_citations", False))
-        # Clear the generated output — user should re-generate for new model
-        self.output_text.clear()
-
     def _clear_all(self):
-        self.role_input.clear()
-        self.context_input.clear()
-        self.instruction_input.clear()
-        self.input_data.clear()
-        self.constraints_input.clear()
-        self.examples_input.clear()
-        self.additional_instructions.clear()
+        """Reset model-specific options, output, AND shared fields."""
+        # Reset model-specific widgets
+        for opt in self.config["specific_options"]:
+            widget = self.option_widgets.get(opt["key"])
+            if widget is None:
+                continue
+            if isinstance(widget, QCheckBox):
+                widget.setChecked(opt.get("default", False))
+            elif isinstance(widget, QComboBox):
+                widget.setCurrentIndex(0)
         self.output_text.clear()
-        self.task_type.setCurrentIndex(0)
-        self.programming_lang.setCurrentIndex(0)
-        self.tone.setCurrentIndex(0)
-        self.audience.setCurrentIndex(0)
-        self.output_format.setCurrentIndex(0)
-        self.detail_level.setCurrentIndex(2)
-        self.output_language.setCurrentIndex(0)
-        self.max_length.setCurrentIndex(0)
-        self.temperature_hint.setCurrentIndex(0)
-        self.chain_of_thought.setChecked(False)
-        self.include_citations.setChecked(False)
-        self.xml_tags.setChecked(self.config["xml_default"])
+        # Also clear shared panel
+        self.shared.clear_all()
 
 
-# ── Main window with tabbed interface ──
+# ── Main window ──
 
 class PromptBuilderApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AI Prompt Builder")
-        self.setMinimumSize(1000, 800)
+        self.setMinimumSize(1100, 800)
         self._build_ui()
 
     def _build_ui(self):
@@ -749,33 +812,26 @@ class PromptBuilderApp(QMainWindow):
         title.setStyleSheet("color: #334155; padding: 6px;")
         main_layout.addWidget(title)
 
-        # Tab widget — one tab per AI model
+        # Main splitter: shared fields (left) | model tabs (right)
+        splitter = QSplitter(Qt.Horizontal)
+        main_layout.addWidget(splitter, 1)
+
+        # Left — shared fields (persists across tab switches)
+        self.shared_panel = SharedFieldsPanel()
+        splitter.addWidget(self.shared_panel)
+
+        # Right — tabbed model panels
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.model_tabs = []
         for cfg in MODEL_CONFIGS:
-            tab = PromptBuilderTab(cfg)
+            tab = ModelTab(cfg, self.shared_panel)
             self.tabs.addTab(tab, cfg["name"])
             self.model_tabs.append(tab)
-        main_layout.addWidget(self.tabs, 1)
+        splitter.addWidget(self.tabs)
 
-        # Wire up "Send to..." menus — each tab gets actions for other models
-        for src_idx, src_tab in enumerate(self.model_tabs):
-            for dst_idx, dst_cfg in enumerate(MODEL_CONFIGS):
-                if dst_idx == src_idx:
-                    continue
-                action = src_tab.send_menu.addAction(dst_cfg["name"])
-                # Capture indices via default args
-                action.triggered.connect(
-                    lambda _checked, s=src_idx, d=dst_idx:
-                        self._send_to_model(s, d)
-                )
-
-    def _send_to_model(self, src_idx, dst_idx):
-        """Copy all fields from source tab to destination tab and switch."""
-        state = self.model_tabs[src_idx].export_state()
-        self.model_tabs[dst_idx].import_state(state)
-        self.tabs.setCurrentIndex(dst_idx)
+        splitter.setStretchFactor(0, 4)
+        splitter.setStretchFactor(1, 6)
 
         self.setStyleSheet("""
             QMainWindow { background: #F8FAFC; }
